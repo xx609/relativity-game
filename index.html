@@ -31,7 +31,6 @@
         <div class="gauge-track"><i id="player-speed-bar"></i><b id="light-limit-marker"></b></div>
         <div class="gauge-ratio"><span id="player-ratio">0.000 c</span><span id="gamma-readout">γ 1.000</span></div>
         <div class="movement-readout"><span id="movement-mode">WALKING</span><span id="altitude-readout">0.0 u ↑</span></div>
-        <div id="movement-hint" class="movement-hint">Space jump · 2× Space fly</div>
       </section>
 
       <section id="target-panel" class="target-panel glass" aria-live="polite" hidden>
@@ -68,7 +67,7 @@
       </button>
 
       <aside id="settings-panel" class="settings-panel glass" aria-label="Settings" hidden>
-        <div class="settings-title"><span>VIEW</span><small>ESC</small></div>
+        <div class="settings-title"><span>VIEW</span></div>
         <label class="toggle-row"><span>Doppler</span><input id="effect-doppler" type="checkbox" checked /><i></i></label>
         <label class="toggle-row"><span>Clocks</span><input id="effect-clocks" type="checkbox" checked /><i></i></label>
         <label class="toggle-row"><span>Contraction</span><input id="effect-contraction" type="checkbox" checked /><i></i></label>
@@ -84,19 +83,17 @@
       <div id="start-screen" class="start-screen">
         <div class="start-orbit" aria-hidden="true"><i></i><i></i><b></b></div>
         <h1>RELATIVITY</h1>
-        <p>MOVE · OBSERVE · CHANGE <em>c</em></p>
         <button id="enter-button" type="button"><span>ENTER</span><i>→</i></button>
-        <div class="key-hints" aria-label="Controls">
-          <span><kbd>WASD</kbd> move</span>
-          <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v6a6 6 0 0 0 12 0V9a6 6 0 0 0-6-6Zm0 0v7"></path></svg> look</span>
-          <span><kbd>Shift</kbd> boost</span>
-          <span><kbd>Space</kbd> jump / rise</span>
-          <span><kbd>Space ×2</kbd> fly / walk</span>
-          <span><kbd>Ctrl</kbd> descend</span>
-        </div>
       </div>
 
-      <div id="pointer-prompt" class="pointer-prompt" hidden>CLICK TO LOOK</div>
+      <div id="move-hint" class="control-hint move-hint" role="note" aria-label="WASD to move" hidden>
+        <span class="movement-keys" aria-hidden="true">
+          <kbd class="key-w">W</kbd>
+          <kbd class="key-a">A</kbd><kbd class="key-s">S</kbd><kbd class="key-d">D</kbd>
+        </span>
+        <span aria-hidden="true">to move</span>
+      </div>
+      <div id="cursor-hint" class="control-hint cursor-hint" hidden><kbd>Esc</kbd><span>to show cursor</span></div>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>

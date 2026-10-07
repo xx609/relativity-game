@@ -8,12 +8,12 @@
   --glass: rgba(8, 20, 34, 0.72);
   --line: rgba(178, 232, 242, 0.16);
   --muted: #8ba6b7;
+  --dock-bottom: 28px;
 }
 
 .gauge-heading, .gauge-ratio, .target-icon, .target-panel small, .target-panel strong,
 .icon-button, .light-control span, .light-control output, .compare-button span,
-.settings-title, .range-row output, .start-screen p, .start-screen button, kbd,
-.pointer-prompt, .toast {
+.settings-title, .range-row output, .start-screen button, .control-hint, .toast {
   font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
 }
 
@@ -55,7 +55,6 @@ button { color: inherit; }
 .gauge-track b { position: absolute; width: 1px; height: 7px; right: 1.5%; top: -2px; background: rgba(255,255,255,.55); }
 .gauge-ratio { display: flex; justify-content: space-between; color: var(--muted); font: 9px 'DM Mono', monospace; letter-spacing: .05em; }
 .movement-readout { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); color: var(--cyan); font: 9px Consolas, monospace; letter-spacing: .05em; }
-.movement-hint { margin-top: 6px; color: var(--muted); font: 9px Consolas, monospace; white-space: pre-line; }
 
 .reticle { position: fixed; top: 50%; left: 50%; width: 22px; height: 22px; transform: translate(-50%,-50%); pointer-events: none; opacity: .88; transition: transform .18s, opacity .18s; }
 .reticle i { position: absolute; background: rgba(235,253,255,.92); box-shadow: 0 0 4px rgba(103,232,249,.6); }
@@ -73,7 +72,7 @@ body.targeting .reticle i { background: var(--cyan); }
 .closing-meter { width: 3px; height: 32px; background: rgba(126,163,180,.2); display: flex; align-items: flex-end; }
 .closing-meter i { width: 100%; height: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
 
-.control-dock { position: fixed; left: 50%; bottom: 28px; height: 56px; transform: translateX(-50%); display: flex; align-items: center; border-radius: 5px; padding: 7px; gap: 6px; }
+.control-dock { position: fixed; left: 50%; bottom: var(--dock-bottom); height: 56px; transform: translateX(-50%); display: flex; align-items: center; border-radius: 5px; padding: 7px; gap: 6px; }
 .icon-button, .compare-button, .settings-button { border: 0; background: transparent; cursor: pointer; }
 .icon-button { width: 40px; height: 40px; color: #c7e7ed; font: 16px 'DM Mono'; border-radius: 3px; }
 .icon-button:hover, .icon-button[aria-pressed="true"] { background: rgba(103,232,249,.1); color: var(--cyan); }
@@ -100,7 +99,6 @@ input[type="range"]::-moz-range-thumb { width: 7px; height: 14px; border-radius:
 .settings-panel { position: fixed; right: 32px; bottom: 88px; width: 232px; max-height: calc(100vh - 108px); overflow-y: auto; padding: 16px; border-radius: 5px; scrollbar-width: thin; scrollbar-color: rgba(103,232,249,.25) transparent; }
 .settings-panel[hidden] { display: none; }
 .settings-title { display: flex; justify-content: space-between; color: var(--cyan); font: 9px 'DM Mono'; letter-spacing: .16em; margin-bottom: 9px; }
-.settings-title small { color: var(--muted); border: 1px solid var(--line); padding: 2px 4px; letter-spacing: 0; }
 .toggle-row { height: 31px; display: flex; align-items: center; font-size: 11px; color: #b7ccd5; cursor: pointer; }
 .toggle-row input { position: absolute; opacity: 0; pointer-events: none; }
 .toggle-row i { margin-left: auto; width: 25px; height: 13px; border-radius: 8px; background: rgba(119,154,169,.25); position: relative; }
@@ -115,9 +113,7 @@ input[type="range"]::-moz-range-thumb { width: 7px; height: 14px; border-radius:
 .start-screen { position: fixed; inset: 0; background: radial-gradient(circle at 50% 43%, rgba(15,48,66,.7), rgba(3,9,17,.93) 58%, #030810 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity .65s, visibility .65s; }
 .start-screen::before { content:''; position:absolute; inset:0; opacity:.22; background-image: linear-gradient(rgba(103,232,249,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(103,232,249,.12) 1px, transparent 1px); background-size: 70px 70px; mask-image: radial-gradient(circle at 50% 50%, black, transparent 65%); transform: perspective(450px) rotateX(60deg) translateY(38%); }
 .start-screen.dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
-.start-screen h1 { font-size: clamp(32px, 5vw, 62px); letter-spacing: .28em; margin: 30px 0 10px .28em; font-weight: 500; text-shadow: 0 0 35px rgba(103,232,249,.14); }
-.start-screen p { color: #7593a2; font: 9px 'DM Mono'; letter-spacing: .32em; margin: 0 0 38px; }
-.start-screen p em { color: var(--cyan); }
+.start-screen h1 { font-size: clamp(32px, 5vw, 62px); letter-spacing: .28em; margin: 30px 0 38px .28em; font-weight: 500; text-shadow: 0 0 35px rgba(103,232,249,.14); }
 .start-screen button { width: 142px; height: 43px; background: rgba(17,47,63,.65); border: 1px solid rgba(103,232,249,.45); display: flex; align-items: center; justify-content: center; gap: 28px; color: var(--cyan-bright); font: 10px 'DM Mono'; letter-spacing: .2em; cursor: pointer; position: relative; }
 .start-screen button:hover { background: rgba(41,101,119,.42); box-shadow: 0 0 28px rgba(103,232,249,.12); }
 .start-orbit { width: 94px; height: 94px; position: relative; }
@@ -126,20 +122,26 @@ input[type="range"]::-moz-range-thumb { width: 7px; height: 14px; border-radius:
 .start-orbit b { position: absolute; left: 39px; top: 39px; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 20px var(--cyan); }
 .start-orbit::after { content:''; position:absolute; width:7px; height:7px; border-radius:50%; background:#f7cd7c; top:18px; left:16px; box-shadow:0 0 10px #f7cd7c; }
 @keyframes spin { to { transform: rotateX(65deg) rotateZ(385deg); } }
-.key-hints { margin-top: 35px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 18px; max-width: 520px; padding: 0 24px; color: #8ba6b7; font-size: 11px; }
-.key-hints > span { height: 28px; display: flex; align-items: center; gap: 3px; }
-kbd { min-width: 21px; height: 21px; padding: 0 5px; display: grid; place-items: center; border: 1px solid rgba(160,194,205,.22); border-radius: 2px; background: rgba(8,20,30,.5); font: 8px 'DM Mono'; box-shadow: 0 2px rgba(255,255,255,.04); }
-.key-hints svg { width: 20px; fill: none; stroke: currentColor; stroke-width: 1.2; }
-
-.pointer-prompt { position: fixed; left: 50%; top: 60%; transform: translate(-50%,-50%); color: rgba(212,240,245,.75); font: 9px 'DM Mono'; letter-spacing: .16em; padding: 9px 12px; border: 1px solid rgba(180,220,228,.15); background: rgba(3,11,18,.45); }
+.control-hint { position: fixed; display: flex; align-items: center; gap: 10px; color: #9bb2be; font-size: 10px; line-height: 14px; letter-spacing: .04em; pointer-events: none; text-shadow: 0 1px 4px #030810; }
+.control-hint[hidden] { display: none; }
+.control-hint kbd { display: grid; place-items: center; min-width: 25px; height: 25px; padding: 0 6px; border: 1px solid rgba(178,232,242,.35); border-bottom-width: 2px; border-radius: 4px; background: rgba(8,20,34,.72); box-shadow: 0 2px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07); color: #d6eaf0; font: inherit; }
+.move-hint { left: 50%; bottom: calc(var(--dock-bottom) + 56px + 16px); transform: translateX(-50%); white-space: nowrap; }
+.movement-keys { display: grid; grid-template-areas: ". w ." "a s d"; gap: 4px; }
+.key-w { grid-area: w; }
+.key-a { grid-area: a; }
+.key-s { grid-area: s; }
+.key-d { grid-area: d; }
+.cursor-hint { top: 68px; left: 34px; }
 .toast { position: fixed; top: 92px; left: 50%; transform: translateX(-50%) translateY(-8px); opacity: 0; color: #cbf7fa; font: 9px 'DM Mono'; letter-spacing: .12em; padding: 8px 12px; background: rgba(4,16,25,.65); border: 1px solid rgba(103,232,249,.15); transition: opacity .2s, transform .2s; pointer-events: none; }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 @media (max-width: 720px) {
+  :root { --dock-bottom: 18px; }
   .brand span { display: none; }
   .brand { top: 20px; left: 20px; }
+  .cursor-hint { top: 58px; left: 20px; }
   .speed-gauge { top: 18px; right: 18px; width: 170px; }
-  .control-dock { bottom: 18px; max-width: calc(100% - 30px); }
+  .control-dock { max-width: calc(100% - 30px); }
   .light-control { grid-template-columns: 18px 12px minmax(70px, 120px) 34px; gap: 5px; }
   .settings-button { right: 18px; bottom: 84px; }
   .settings-panel { right: 18px; bottom: 141px; max-height: calc(100vh - 153px); }

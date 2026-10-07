@@ -15,14 +15,14 @@ game.input.setActive(false);
 const ui = {
   startScreen: element<HTMLDivElement>('#start-screen'),
   enterButton: element<HTMLButtonElement>('#enter-button'),
-  pointerPrompt: element<HTMLDivElement>('#pointer-prompt'),
+  moveHint: element<HTMLDivElement>('#move-hint'),
+  cursorHint: element<HTMLDivElement>('#cursor-hint'),
   playerSpeed: element<HTMLElement>('#player-speed'),
   playerSpeedBar: element<HTMLElement>('#player-speed-bar'),
   playerRatio: element<HTMLElement>('#player-ratio'),
   gamma: element<HTMLElement>('#gamma-readout'),
   movementMode: element<HTMLElement>('#movement-mode'),
   altitude: element<HTMLElement>('#altitude-readout'),
-  movementHint: element<HTMLElement>('#movement-hint'),
   targetPanel: element<HTMLElement>('#target-panel'),
   targetName: element<HTMLElement>('#target-name'),
   targetSpeed: element<HTMLElement>('#target-speed'),
@@ -44,11 +44,14 @@ const ui = {
 };
 
 let hasEntered = false;
+let wasPointerLocked = false;
 let toastTimer = 0;
 
 function setEntered(): void {
   if (!hasEntered) {
     hasEntered = true;
+    ui.moveHint.hidden = false;
+    ui.cursorHint.hidden = false;
     ui.startScreen.classList.add('dismissed');
     window.setTimeout(() => { ui.startScreen.hidden = true; }, 650);
   }
@@ -89,8 +92,8 @@ function setComparison(classical: boolean): void {
 
 function openSettings(): void {
   game.input.setActive(false);
-  game.input.releaseLock();
   ui.settingsPanel.hidden = false;
+  game.input.releaseLock();
   ui.settingsButton.setAttribute('aria-expanded', 'true');
 }
 
@@ -101,13 +104,15 @@ function closeSettings(): void {
 }
 
 function updateHud(frame: FrameInfo): void {
+  if (hasEntered && !ui.moveHint.hidden && frame.playerSpeed > 0.05) {
+    ui.moveHint.hidden = true;
+  }
   ui.playerSpeed.textContent = frame.playerSpeed.toFixed(1);
   ui.playerRatio.textContent = `${frame.playerRatio.toFixed(3)} c`;
   ui.gamma.textContent = `γ ${frame.gamma.toFixed(3)}`;
   ui.playerSpeedBar.style.width = `${Math.min(frame.playerRatio / 0.985, 1) * 100}%`;
   ui.movementMode.textContent = frame.flying ? 'FLYING' : frame.grounded ? 'WALKING' : 'AIRBORNE';
   ui.altitude.textContent = `${frame.altitude.toFixed(1)} u ↑`;
-  ui.movementHint.textContent = frame.flying ? 'Space ↑ · Ctrl ↓\n2× Space to walk' : 'Space jump · 2× Space fly';
 
   const target = frame.target;
   ui.targetPanel.hidden = !target;
@@ -129,7 +134,12 @@ canvas.addEventListener('click', () => {
 });
 
 game.onLockChange = (locked) => {
-  ui.pointerPrompt.hidden = locked || !hasEntered || !ui.settingsPanel.hidden;
+  // Browsers can consume Escape while releasing pointer lock, so also dismiss
+  // the hint on a user unlock. Opening settings or leaving the tab keeps it.
+  if (wasPointerLocked && !locked && ui.settingsPanel.hidden && document.hasFocus()) {
+    ui.cursorHint.hidden = true;
+  }
+  wasPointerLocked = locked;
 };
 game.onFrame = updateHud;
 
@@ -189,12 +199,21 @@ ui.sensitivity.addEventListener('input', () => {
 });
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'Escape') {
+    if (hasEntered) ui.cursorHint.hidden = true;
+    game.input.releaseLock();
+    if (!ui.settingsPanel.hidden) closeSettings();
+    return;
+  }
   const source = event.target;
   if (source instanceof HTMLInputElement) return;
   if (event.code === 'KeyP') setPaused(!game.simulation.paused);
   if (event.code === 'KeyR') resetWorld();
   if (event.code === 'KeyC') setComparison(game.effects.relativistic);
-  if (event.code === 'Escape' && !ui.settingsPanel.hidden) closeSettings();
+});
+
+window.addEventListener('keyup', (event) => {
+  if (event.code === 'Escape' && hasEntered) ui.cursorHint.hidden = true;
 });
 
 game.start();
