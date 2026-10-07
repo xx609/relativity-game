@@ -1,0 +1,190 @@
+import './styles.css';
+import { RelativityGame, type FrameInfo } from './game/RelativityGame';
+import { DEFAULT_LIGHT_SPEED } from './simulation/world';
+
+function element<T extends HTMLElement>(selector: string): T {
+  const match = document.querySelector<T>(selector);
+  if (!match) throw new Error(`Missing UI element: ${selector}`);
+  return match;
+}
+
+const canvas = element<HTMLCanvasElement>('#world');
+const game = new RelativityGame(canvas);
+
+const ui = {
+  startScreen: element<HTMLDivElement>('#start-screen'),
+  enterButton: element<HTMLButtonElement>('#enter-button'),
+  pointerPrompt: element<HTMLDivElement>('#pointer-prompt'),
+  playerSpeed: element<HTMLElement>('#player-speed'),
+  playerSpeedBar: element<HTMLElement>('#player-speed-bar'),
+  playerRatio: element<HTMLElement>('#player-ratio'),
+  gamma: element<HTMLElement>('#gamma-readout'),
+  targetPanel: element<HTMLElement>('#target-panel'),
+  targetName: element<HTMLElement>('#target-name'),
+  targetSpeed: element<HTMLElement>('#target-speed'),
+  targetArrow: element<HTMLElement>('#target-arrow'),
+  closingMeter: element<HTMLElement>('#closing-meter-fill'),
+  pauseButton: element<HTMLButtonElement>('#pause-button'),
+  resetButton: element<HTMLButtonElement>('#reset-button'),
+  lightSpeed: element<HTMLInputElement>('#light-speed'),
+  lightSpeedValue: element<HTMLOutputElement>('#light-speed-value'),
+  compareButton: element<HTMLButtonElement>('#compare-button'),
+  compareLabel: element<HTMLElement>('#compare-button span'),
+  settingsButton: element<HTMLButtonElement>('#settings-button'),
+  settingsPanel: element<HTMLElement>('#settings-panel'),
+  fov: element<HTMLInputElement>('#fov-control'),
+  fovOutput: element<HTMLOutputElement>('#fov-output'),
+  sensitivity: element<HTMLInputElement>('#sensitivity-control'),
+  sensitivityOutput: element<HTMLOutputElement>('#sensitivity-output'),
+  toast: element<HTMLDivElement>('#toast'),
+};
+
+let hasEntered = false;
+let toastTimer = 0;
+
+function setEntered(): void {
+  if (!hasEntered) {
+    hasEntered = true;
+    ui.startScreen.classList.add('dismissed');
+    window.setTimeout(() => { ui.startScreen.hidden = true; }, 650);
+  }
+  closeSettings();
+  game.requestPointerLock();
+}
+
+function showToast(message: string): void {
+  window.clearTimeout(toastTimer);
+  ui.toast.textContent = message;
+  ui.toast.classList.add('visible');
+  toastTimer = window.setTimeout(() => ui.toast.classList.remove('visible'), 1200);
+}
+
+function setPaused(paused: boolean): void {
+  game.simulation.setPaused(paused);
+  ui.pauseButton.setAttribute('aria-pressed', String(paused));
+  ui.pauseButton.querySelector('span')!.textContent = paused ? '▶' : 'Ⅱ';
+  showToast(paused ? 'TIME HELD' : 'TIME FLOWING');
+}
+
+function resetWorld(): void {
+  game.reset();
+  ui.lightSpeed.value = String(DEFAULT_LIGHT_SPEED);
+  ui.lightSpeedValue.value = DEFAULT_LIGHT_SPEED.toFixed(1);
+  ui.pauseButton.setAttribute('aria-pressed', 'false');
+  ui.pauseButton.querySelector('span')!.textContent = 'Ⅱ';
+  showToast('WORLD RESET');
+}
+
+function setComparison(classical: boolean): void {
+  game.effects.relativistic = !classical;
+  ui.compareButton.setAttribute('aria-pressed', String(classical));
+  ui.compareLabel.textContent = classical ? 'CLS' : 'REL';
+  showToast(classical ? 'CLASSICAL VIEW' : 'RELATIVISTIC VIEW');
+}
+
+function openSettings(): void {
+  game.input.releaseLock();
+  ui.settingsPanel.hidden = false;
+  ui.settingsButton.setAttribute('aria-expanded', 'true');
+}
+
+function closeSettings(): void {
+  ui.settingsPanel.hidden = true;
+  ui.settingsButton.setAttribute('aria-expanded', 'false');
+}
+
+function updateHud(frame: FrameInfo): void {
+  ui.playerSpeed.textContent = frame.playerSpeed.toFixed(1);
+  ui.playerRatio.textContent = `${frame.playerRatio.toFixed(3)} c`;
+  ui.gamma.textContent = `γ ${frame.gamma.toFixed(3)}`;
+  ui.playerSpeedBar.style.width = `${Math.min(frame.playerRatio / 0.985, 1) * 100}%`;
+
+  const target = frame.target;
+  ui.targetPanel.hidden = !target;
+  document.body.classList.toggle('targeting', Boolean(target));
+  if (!target) return;
+
+  ui.targetName.textContent = target.name;
+  ui.targetSpeed.innerHTML = `${target.speed.toFixed(1)} <em>u/s</em>`;
+  const closingRatio = target.closingSpeed / target.maxClosingSpeed;
+  ui.targetArrow.textContent = closingRatio >= 0 ? '↓' : '↑';
+  ui.targetArrow.style.color = closingRatio >= 0 ? '#7dd3fc' : '#fb7185';
+  ui.closingMeter.style.height = `${Math.max(8, Math.min(100, Math.abs(closingRatio) * 100))}%`;
+  ui.closingMeter.style.background = closingRatio >= 0 ? '#67e8f9' : '#fb7185';
+}
+
+ui.enterButton.addEventListener('click', setEntered);
+canvas.addEventListener('click', () => {
+  if (hasEntered && ui.settingsPanel.hidden) game.requestPointerLock();
+});
+
+game.onLockChange = (locked) => {
+  ui.pointerPrompt.hidden = locked || !hasEntered || !ui.settingsPanel.hidden;
+};
+game.onFrame = updateHud;
+
+ui.pauseButton.addEventListener('click', () => setPaused(!game.simulation.paused));
+ui.resetButton.addEventListener('click', resetWorld);
+ui.lightSpeed.addEventListener('input', () => {
+  const value = Number(ui.lightSpeed.value);
+  game.setLightSpeed(value);
+  ui.lightSpeedValue.value = value.toFixed(1);
+});
+ui.lightSpeed.addEventListener('dblclick', () => {
+  ui.lightSpeed.value = String(DEFAULT_LIGHT_SPEED);
+  ui.lightSpeedValue.value = DEFAULT_LIGHT_SPEED.toFixed(1);
+  game.setLightSpeed(DEFAULT_LIGHT_SPEED);
+  showToast('c RESTORED');
+});
+ui.compareButton.addEventListener('click', () => {
+  setComparison(game.effects.relativistic);
+});
+
+ui.settingsButton.addEventListener('click', () => {
+  if (ui.settingsPanel.hidden) openSettings();
+  else closeSettings();
+});
+
+element<HTMLInputElement>('#effect-doppler').addEventListener('change', (event) => {
+  game.effects.doppler = (event.currentTarget as HTMLInputElement).checked;
+});
+element<HTMLInputElement>('#effect-clocks').addEventListener('change', (event) => {
+  game.effects.clocks = (event.currentTarget as HTMLInputElement).checked;
+});
+element<HTMLInputElement>('#effect-contraction').addEventListener('change', (event) => {
+  game.effects.contraction = (event.currentTarget as HTMLInputElement).checked;
+});
+element<HTMLInputElement>('#effect-delay').addEventListener('change', (event) => {
+  game.effects.lightDelay = (event.currentTarget as HTMLInputElement).checked;
+});
+element<HTMLInputElement>('#effect-grid').addEventListener('change', (event) => {
+  void game.setSpacetimeGrid((event.currentTarget as HTMLInputElement).checked);
+});
+element<HTMLInputElement>('#reduced-motion').addEventListener('change', (event) => {
+  game.effects.reducedMotion = (event.currentTarget as HTMLInputElement).checked;
+});
+element<HTMLInputElement>('#low-distortion').addEventListener('change', (event) => {
+  game.effects.lowDistortion = (event.currentTarget as HTMLInputElement).checked;
+});
+
+ui.fov.addEventListener('input', () => {
+  const value = Number(ui.fov.value);
+  game.setFov(value);
+  ui.fovOutput.value = `${value}°`;
+});
+ui.sensitivity.addEventListener('input', () => {
+  const value = Number(ui.sensitivity.value);
+  game.input.sensitivity = value;
+  ui.sensitivityOutput.value = `${value.toFixed(1)}×`;
+});
+
+window.addEventListener('keydown', (event) => {
+  const source = event.target;
+  if (source instanceof HTMLInputElement) return;
+  if (event.code === 'KeyP') setPaused(!game.simulation.paused);
+  if (event.code === 'KeyR') resetWorld();
+  if (event.code === 'KeyC') setComparison(game.effects.relativistic);
+  if (event.code === 'Escape' && !ui.settingsPanel.hidden) closeSettings();
+});
+
+game.start();

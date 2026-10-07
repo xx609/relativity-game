@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08121f" />
+    <meta
+      name="description"
+      content="A first-person interactive experiment that makes special relativity visible."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='27' fill='%230b1727' stroke='%2367e8f9' stroke-width='3'/%3E%3Cpath d='M12 36c12-1 22-8 37-21-7 17-16 29-34 34 7-5 10-9 12-14-5 2-10 2-15 1Z' fill='%2367e8f9'/%3E%3C/svg%3E" />
+    <title>Relativity</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="world" aria-label="Relativity simulation"></canvas>
+
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="reticle" aria-hidden="true"><i></i><i></i></div>
+
+      <header class="brand" aria-label="Relativity">
+        <svg viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="22" cy="22" r="18"></circle>
+          <path d="M8 25c8-1 15-5 25-14-4 12-10 20-23 23 5-3 7-6 8-10-3 1-7 2-10 1Z"></path>
+        </svg>
+        <span>RELATIVITY</span>
+      </header>
+
+      <section class="speed-gauge glass" aria-label="Player speed">
+        <div class="gauge-heading"><span>v</span><strong id="player-speed">0.0</strong><small>u/s</small></div>
+        <div class="gauge-track"><i id="player-speed-bar"></i><b id="light-limit-marker"></b></div>
+        <div class="gauge-ratio"><span id="player-ratio">0.000 c</span><span id="gamma-readout">γ 1.000</span></div>
+      </section>
+
+      <section id="target-panel" class="target-panel glass" aria-live="polite" hidden>
+        <div class="target-icon"><span id="target-arrow">↑</span></div>
+        <div>
+          <small id="target-name">OBJECT</small>
+          <strong id="target-speed">0.0 <em>u/s</em></strong>
+        </div>
+        <div class="closing-meter"><i id="closing-meter-fill"></i></div>
+      </section>
+
+      <nav class="control-dock glass" aria-label="Simulation controls">
+        <button id="pause-button" class="icon-button" type="button" aria-label="Pause simulation" aria-pressed="false">
+          <span class="pause-icon">Ⅱ</span>
+        </button>
+        <button id="reset-button" class="icon-button" type="button" aria-label="Reset world">
+          <span class="reset-icon">↺</span>
+        </button>
+        <div class="dock-divider"></div>
+        <div class="light-control">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M14 7l5 5-5 5"></path><circle cx="5" cy="12" r="2"></circle></svg>
+          <span>c</span>
+          <input id="light-speed" type="range" min="6" max="40" step="0.5" value="12" aria-label="Speed of light" />
+          <output id="light-speed-value" for="light-speed">12.0</output>
+        </div>
+        <div class="dock-divider"></div>
+        <button id="compare-button" class="compare-button" type="button" aria-label="Compare classical and relativistic view" aria-pressed="false">
+          <i></i><span>REL</span>
+        </button>
+      </nav>
+
+      <button id="settings-button" class="settings-button glass" type="button" aria-label="Open settings" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5Zm8 3.5-2.1-1.2.1-2.4-2.3-1.3-2 1.3L11.6 7 9.3 8.3l.1 2.4L7.2 12l2.1 1.2-.1 2.4 2.3 1.3 2-1.3 2.1 1.4 2.3-1.3-.1-2.4L20 12Z"></path></svg>
+      </button>
+
+      <aside id="settings-panel" class="settings-panel glass" aria-label="Settings" hidden>
+        <div class="settings-title"><span>VIEW</span><small>ESC</small></div>
+        <label class="toggle-row"><span>Doppler</span><input id="effect-doppler" type="checkbox" checked /><i></i></label>
+        <label class="toggle-row"><span>Clocks</span><input id="effect-clocks" type="checkbox" checked /><i></i></label>
+        <label class="toggle-row"><span>Contraction</span><input id="effect-contraction" type="checkbox" checked /><i></i></label>
+        <label class="toggle-row"><span>Light delay</span><input id="effect-delay" type="checkbox" /><i></i></label>
+        <label class="toggle-row"><span>Spacetime grid</span><input id="effect-grid" type="checkbox" /><i></i></label>
+        <div class="settings-rule"></div>
+        <label class="range-row"><span>FOV</span><output id="fov-output">72°</output><input id="fov-control" type="range" min="60" max="95" value="72" /></label>
+        <label class="range-row"><span>Look</span><output id="sensitivity-output">1.0×</output><input id="sensitivity-control" type="range" min="0.4" max="1.8" step="0.1" value="1" /></label>
+        <label class="toggle-row"><span>Reduced motion</span><input id="reduced-motion" type="checkbox" /><i></i></label>
+        <label class="toggle-row"><span>Low distortion</span><input id="low-distortion" type="checkbox" /><i></i></label>
+      </aside>
+
+      <div id="start-screen" class="start-screen">
+        <div class="start-orbit" aria-hidden="true"><i></i><i></i><b></b></div>
+        <h1>RELATIVITY</h1>
+        <p>MOVE · OBSERVE · CHANGE <em>c</em></p>
+        <button id="enter-button" type="button"><span>ENTER</span><i>→</i></button>
+        <div class="key-hints" aria-label="Controls">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+          <span><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v6a6 6 0 0 0 12 0V9a6 6 0 0 0-6-6Zm0 0v7"></path></svg></span>
+          <span><kbd>⇧</kbd></span>
+        </div>
+      </div>
+
+      <div id="pointer-prompt" class="pointer-prompt" hidden>CLICK TO LOOK</div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

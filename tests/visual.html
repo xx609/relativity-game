@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Relativity visual regression</title>
+  <style>
+    body { margin: 0; background: #07131f; color: #c6f1fa; font: 14px system-ui; }
+    canvas { width: 100vw; height: 78vh; display: block; }
+    nav, output { display: block; padding: 10px; }
+    button { padding: 8px; margin: 3px; }
+  </style>
+</head>
+<body>
+  <canvas id="world"></canvas>
+  <nav>
+    <button id="rest">At rest</button>
+    <button id="forward">Forward 0.8 c</button>
+    <button id="diagonal">Diagonal 0.8 c</button>
+    <button id="comoving">Co-moving courier</button>
+    <button id="classical">Classical</button>
+    <button id="drive">Drive into object</button>
+    <button id="delay">Toggle light delay</button>
+    <button id="grid">Toggle grid</button>
+  </nav>
+  <output id="status">Loading</output>
+  <script type="module">
+    import { RelativityGame } from '../src/game/RelativityGame.ts';
+    const game = new RelativityGame(document.querySelector('canvas'));
+    let grid = false;
+    const setPose = (velocity, position = {x: 0, y: 1.7, z: 16}) => {
+      game.simulation.setPaused(true);
+      game.effects.relativistic = true;
+      game.simulation.player.position = {...position};
+      game.simulation.player.velocity = {...velocity};
+      game.simulation.previousPlayer.position = {...position};
+      game.simulation.previousPlayer.velocity = {...velocity};
+    };
+    document.querySelector('#rest').onclick = () => setPose({x: 0, y: 0, z: 0});
+    document.querySelector('#forward').onclick = () => setPose({x: 0, y: 0, z: -9.6});
+    document.querySelector('#diagonal').onclick = () => setPose({x: 6.7882250994, y: 0, z: -6.7882250994});
+    document.querySelector('#comoving').onclick = () => setPose({x: 5.2, y: 0, z: 0}, {x: -10, y: 1.7, z: -4});
+    document.querySelector('#classical').onclick = () => { game.effects.relativistic = !game.effects.relativistic; };
+    document.querySelector('#delay').onclick = () => { game.effects.lightDelay = !game.effects.lightDelay; };
+    document.querySelector('#grid').onclick = () => { grid = !grid; void game.setSpacetimeGrid(grid); };
+    document.querySelector('#drive').onclick = () => {
+      game.reset();
+      game.input.movement = () => ({forward: 1, right: 0, sprint: true, yaw: 0});
+    };
+    game.onFrame = (frame) => {
+      const floor = game.world.children.find((object) => object.isMesh);
+      const courier = game.visuals.get('cyan-courier').group;
+      const e = courier.matrixWorld.elements;
+      const width = Math.hypot(e[0], e[1], e[2]);
+      document.querySelector('#status').textContent = `β ${frame.playerRatio.toFixed(3)} | map volume ${game.world.matrix.determinant().toFixed(3)} | courier x scale ${width.toFixed(3)} | player z ${game.simulation.player.position.z.toFixed(3)} | floor attached ${floor?.parent === game.world} | ${game.effects.relativistic ? 'REL' : 'CLS'}`;
+    };
+    setPose({x: 0, y: 0, z: 0});
+    game.start();
+  </script>
+</body>
+</html>
