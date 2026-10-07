@@ -136,14 +136,24 @@ describe('jumping and flight', () => {
     expect(world.player.grounded).toBe(true);
   });
 
-  it('uses look pitch for flight and keeps walking level', () => {
+  it.each([-1, 1])('keeps forward/backward movement (%s) level at every look pitch', (forward) => {
     const world = new WorldSimulation();
-    step(world, 20, { ...idle, forward: 1, pitch: Math.PI / 3 });
+    step(world, 20, { ...idle, forward, pitch: Math.PI / 3 });
     expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT, 8);
-    world.step(1 / 60, { ...idle, toggleFlight: true });
-    step(world, 30, { ...idle, forward: 1, pitch: Math.PI / 3 });
-    expect(world.player.position.y).toBeGreaterThan(PLAYER_HEIGHT);
-    expect(world.player.velocity.z).toBeLessThan(0);
+    for (const yaw of [0, Math.PI / 3]) {
+      let levelSpeed = 0;
+      for (const pitch of [0, -Math.PI / 2, -Math.PI / 3, Math.PI / 3, Math.PI / 2]) {
+        world.reset();
+        world.player.position = vec(0, 10, 16);
+        world.step(1 / 60, { ...idle, toggleFlight: true });
+        step(world, 30, { ...idle, forward, yaw, pitch });
+        expect(world.player.position.y).toBeCloseTo(10, 8);
+        expect(world.player.velocity.y).toBe(0);
+        expect(world.player.velocity.z * forward).toBeLessThan(0);
+        if (pitch === 0) levelSpeed = magnitude(world.player.velocity);
+        expect(magnitude(world.player.velocity)).toBeCloseTo(levelSpeed, 8);
+      }
+    }
   });
 
   it('lands on the platform, jumps off it, and flies over its footprint', () => {

@@ -39,10 +39,9 @@ python -m http.server 8000 --directory dist
 
 - `WASD` or arrow keys — move
 - Mouse — look
-- `Shift` — accelerate faster
+- `Shift` — accelerate faster while walking; hold to descend while flying
 - `Space` — jump; hold to rise while flying
 - Double-tap `Space` — toggle flight (turn off to fall and land); `F` also works
-- `Ctrl` — descend while flying
 - `P` — pause
 - `R` — reset
 - `C` — classical/relativistic visual comparison
@@ -50,7 +49,7 @@ python -m http.server 8000 --directory dist
 
 The speed-of-light control is at the bottom of the HUD. Double-clicking its slider restores the default `c = 12` demonstration setting.
 
-While flying, `WASD` follows your viewing direction. Release movement keys to slow to a hover. The speed gauge shows your movement mode and height above the floor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
+While flying, `WASD` moves horizontally in the direction you face, regardless of how far up or down you look. Only `Space` and `Shift` control vertical thrust. Release movement keys to slow to a hover. The speed gauge shows your movement mode and height above the floor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
 
 ## Architecture
 

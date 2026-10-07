@@ -192,8 +192,7 @@ export class WorldSimulation {
     }
     const sin = Math.sin(input.yaw);
     const cos = Math.cos(input.yaw);
-    const pitch = this.player.flying ? input.pitch : 0;
-    const forward = vec(-sin * Math.cos(pitch), Math.sin(pitch), -cos * Math.cos(pitch));
+    const forward = vec(-sin, 0, -cos);
     const right = vec(cos, 0, -sin);
     let wish = add(scale(forward, input.forward), scale(right, input.right));
     if (this.player.flying) wish.y += input.vertical;
@@ -201,7 +200,7 @@ export class WorldSimulation {
     if (wishLength > 1) wish = scale(wish, 1 / wishLength);
 
     if (wishLength > 0) {
-      const acceleration = input.sprint ? 10.5 : 7.5;
+      const acceleration = input.sprint && !this.player.flying ? 10.5 : 7.5;
       const localDelta = scale(wish, acceleration * deltaSeconds);
       this.player.velocity = addRelativisticVelocities(this.player.velocity, localDelta, this.lightSpeed);
     } else {

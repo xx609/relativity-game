@@ -100,4 +100,28 @@ describe('Space flight gesture', () => {
     key('keydown', 100);
     expect(input.movement()).toMatchObject({ jump: true, toggleFlight: false });
   });
+
+  it.each(['ShiftLeft', 'ShiftRight'])('descends with %s and cancels opposing vertical keys', (code) => {
+    const world = new WorldSimulation();
+    world.player.position.y = 10;
+    key('keydown', 0, 'KeyF');
+    world.step(1 / 60, input.movement());
+    key('keydown', 20, code);
+    world.step(1 / 60, input.movement());
+    expect(world.player.position.y).toBeLessThan(10);
+    expect(world.player.velocity.y).toBeCloseTo(-7.5 / 60, 8);
+    key('keydown', 40);
+    expect(input.movement().vertical).toBe(0);
+    key('keyup', 60, code);
+    expect(input.movement().vertical).toBe(1);
+    key('keyup', 80);
+    expect(input.movement().vertical).toBe(0);
+  });
+
+  it.each(['ControlLeft', 'ControlRight'])('does not descend with %s', (code) => {
+    key('keydown', 0, code);
+    expect(input.movement().vertical).toBe(0);
+    key('keydown', 20);
+    expect(input.movement().vertical).toBe(1);
+  });
 });

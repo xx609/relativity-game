@@ -2,7 +2,7 @@ import type { MovementInput } from '../simulation/world';
 
 const MOVEMENT_KEYS = new Set([
   'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-  'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'Space', 'KeyF',
+  'ShiftLeft', 'ShiftRight', 'Space', 'KeyF',
 ]);
 const DOUBLE_TAP_MS = 300;
 
@@ -59,7 +59,7 @@ export class InputController {
       pitch: this.pitch,
       jump: this.jumpQueued,
       vertical: Number(this.keys.has('Space'))
-        - Number(this.keys.has('ControlLeft') || this.keys.has('ControlRight')),
+        - Number(this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')),
       toggleFlight: this.flightToggleQueued,
     };
     this.jumpQueued = false;
