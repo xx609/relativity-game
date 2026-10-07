@@ -41,6 +41,9 @@ export interface FrameInfo {
   playerSpeed: number;
   playerRatio: number;
   gamma: number;
+  flying: boolean;
+  grounded: boolean;
+  altitude: number;
   target: TargetInfo | null;
 }
 
@@ -148,6 +151,7 @@ export class RelativityGame {
 
   reset(): void {
     this.simulation.reset();
+    this.input.reset();
     this.input.yaw = 0;
     this.input.pitch = 0;
     this.accumulator = 0;
@@ -168,10 +172,9 @@ export class RelativityGame {
     this.animationFrame = requestAnimationFrame(this.tick);
     const frameDelta = Math.min(this.clock.getDelta(), 0.1);
     this.accumulator += frameDelta;
-    const input = this.input.movement();
-
     while (this.accumulator >= FIXED_STEP) {
-      this.simulation.step(FIXED_STEP, input);
+      // Consume queued presses exactly once, at a physics step (not a render).
+      this.simulation.step(FIXED_STEP, this.input.movement());
       this.accumulator -= FIXED_STEP;
     }
 
@@ -191,6 +194,9 @@ export class RelativityGame {
       playerSpeed: speed,
       playerRatio: ratio,
       gamma: lorentzFactor(speed, this.simulation.lightSpeed),
+      flying: this.simulation.player.flying,
+      grounded: this.simulation.player.grounded,
+      altitude: Math.max(0, this.observerPosition.y - PLAYER_HEIGHT),
       target,
     });
 
@@ -199,7 +205,7 @@ export class RelativityGame {
 
   private updateCamera(): void {
     const position = this.observerPosition;
-    this.camera.position.set(position.x, PLAYER_HEIGHT, position.z);
+    this.camera.position.set(position.x, position.y, position.z);
     this.camera.rotation.order = 'YXZ';
     this.camera.rotation.y = this.input.yaw;
     this.camera.rotation.x = this.input.pitch;

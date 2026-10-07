@@ -16,12 +16,18 @@ export const DEFAULT_LIGHT_SPEED = 12;
 export const MAX_BETA = 0.985;
 export const PLAYER_HEIGHT = 1.7;
 export const ROOM_HALF_SIZE = 30;
+const GRAVITY = 14;
+const JUMP_SPEED = 6;
 
 export interface MovementInput {
   forward: number;
   right: number;
   sprint: boolean;
   yaw: number;
+  pitch: number;
+  jump: boolean;
+  vertical: number;
+  toggleFlight: boolean;
 }
 
 export interface RailDefinition {
@@ -103,6 +109,8 @@ export class WorldSimulation {
   readonly player = {
     position: vec(0, PLAYER_HEIGHT, 16),
     velocity: vec(),
+    flying: false,
+    grounded: true,
   };
   readonly previousPlayer = { position: vec(0, PLAYER_HEIGHT, 16), velocity: vec() };
   previousTime = 0;
@@ -133,6 +141,8 @@ export class WorldSimulation {
     this.targetLightSpeed = DEFAULT_LIGHT_SPEED;
     this.player.position = vec(0, PLAYER_HEIGHT, 16);
     this.player.velocity = vec();
+    this.player.flying = false;
+    this.player.grounded = true;
     this.previousPlayer.position = { ...this.player.position };
     this.previousPlayer.velocity = vec();
     this.previousTime = 0;
@@ -171,11 +181,22 @@ export class WorldSimulation {
   }
 
   private stepPlayer(deltaSeconds: number, input: MovementInput, colliders: Collider[]): void {
+    if (input.toggleFlight) {
+      this.player.flying = !this.player.flying;
+      // Start hovering immediately, including when flight is enabled mid-fall.
+      this.player.velocity.y = 0;
+    }
+    if (input.jump && this.player.grounded && !this.player.flying) {
+      this.player.velocity = addRelativisticVelocities(this.player.velocity, vec(0, JUMP_SPEED, 0), this.lightSpeed);
+      this.player.grounded = false;
+    }
     const sin = Math.sin(input.yaw);
     const cos = Math.cos(input.yaw);
-    const forward = vec(-sin, 0, -cos);
+    const pitch = this.player.flying ? input.pitch : 0;
+    const forward = vec(-sin * Math.cos(pitch), Math.sin(pitch), -cos * Math.cos(pitch));
     const right = vec(cos, 0, -sin);
     let wish = add(scale(forward, input.forward), scale(right, input.right));
+    if (this.player.flying) wish.y += input.vertical;
     const wishLength = magnitude(wish);
     if (wishLength > 1) wish = scale(wish, 1 / wishLength);
 
@@ -185,28 +206,38 @@ export class WorldSimulation {
       this.player.velocity = addRelativisticVelocities(this.player.velocity, localDelta, this.lightSpeed);
     } else {
       const damping = Math.exp(-3.5 * deltaSeconds);
-      this.player.velocity = scale(this.player.velocity, damping);
+      this.player.velocity.x *= damping;
+      this.player.velocity.z *= damping;
+      if (this.player.flying) this.player.velocity.y *= damping;
     }
 
-    this.player.velocity.y = 0;
+    if (!this.player.flying) {
+      this.player.velocity = addRelativisticVelocities(this.player.velocity, vec(0, -GRAVITY * deltaSeconds, 0), this.lightSpeed);
+    }
     this.player.velocity = clampMagnitude(this.player.velocity, this.lightSpeed * MAX_BETA);
-    const moved = moveWithCollisions(this.player.position, this.player.velocity, deltaSeconds, colliders, 0.38, this.lightSpeed * MAX_BETA);
-    this.player.position = moved.position;
+    const halfHeight = PLAYER_HEIGHT / 2;
+    const bodyCenter = add(this.player.position, vec(0, -halfHeight, 0));
+    const moved = moveWithCollisions(bodyCenter, this.player.velocity, deltaSeconds, colliders, 0.38, this.lightSpeed * MAX_BETA, halfHeight);
+    this.player.position = add(moved.position, vec(0, halfHeight, 0));
     this.player.velocity = moved.velocity;
+    this.player.grounded = moved.grounded;
   }
 
   private createColliders(): Collider[] {
-    const colliders: Collider[] = [];
+    const colliders: Collider[] = [
+      { center: vec(0, -1, 0), halfSize: vec(Infinity, 1, Infinity), velocity: vec() },
+    ];
     for (const sign of [-1, 1]) {
-      colliders.push({ center: vec(sign * 30.2, 0, 0), halfSize: vec(0.225, 4, 31), velocity: vec() });
-      colliders.push({ center: vec(0, 0, sign * 30.2), halfSize: vec(31, 4, 0.225), velocity: vec() });
+      colliders.push({ center: vec(sign * 30.2, 4, 0), halfSize: vec(0.225, 4, 31), velocity: vec() });
+      colliders.push({ center: vec(0, 4, sign * 30.2), halfSize: vec(31, 4, 0.225), velocity: vec() });
     }
     // Conservative footprints for the central platform and peripheral plinths.
-    colliders.push({ center: vec(), halfSize: vec(5.1, 1, 5.1), velocity: vec() });
+    colliders.push({ center: vec(0, 0.33, 0), halfSize: vec(5.1, 0.325, 5.1), velocity: vec() });
     for (let index = 0; index < 18; index += 1) {
       const angle = index / 18 * Math.PI * 2;
       const radius = ROOM_HALF_SIZE - 3.2 - index % 3 * 0.55;
-      colliders.push({ center: vec(Math.cos(angle) * radius, 0, Math.sin(angle) * radius), halfSize: vec(0.75, 1, 0.75), velocity: vec() });
+      const height = 0.7 + index % 4 * 0.35;
+      colliders.push({ center: vec(Math.cos(angle) * radius, height / 2, Math.sin(angle) * radius), halfSize: vec(0.75, height / 2, 0.75), velocity: vec() });
     }
     return colliders;
   }

@@ -13,7 +13,7 @@
   </head>
   <body>
     <div id="app">
-      <canvas id="world" aria-label="Relativity simulation"></canvas>
+      <canvas id="world" aria-label="Relativity simulation" tabindex="0"></canvas>
 
       <div class="vignette" aria-hidden="true"></div>
       <div class="reticle" aria-hidden="true"><i></i><i></i></div>
@@ -30,6 +30,8 @@
         <div class="gauge-heading"><span>v</span><strong id="player-speed">0.0</strong><small>u/s</small></div>
         <div class="gauge-track"><i id="player-speed-bar"></i><b id="light-limit-marker"></b></div>
         <div class="gauge-ratio"><span id="player-ratio">0.000 c</span><span id="gamma-readout">γ 1.000</span></div>
+        <div class="movement-readout"><span id="movement-mode">WALKING</span><span id="altitude-readout">0.0 u ↑</span></div>
+        <div id="movement-hint" class="movement-hint">Space jump · 2× Space fly</div>
       </section>
 
       <section id="target-panel" class="target-panel glass" aria-live="polite" hidden>
@@ -85,9 +87,12 @@
         <p>MOVE · OBSERVE · CHANGE <em>c</em></p>
         <button id="enter-button" type="button"><span>ENTER</span><i>→</i></button>
         <div class="key-hints" aria-label="Controls">
-          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
-          <span><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v6a6 6 0 0 0 12 0V9a6 6 0 0 0-6-6Zm0 0v7"></path></svg></span>
-          <span><kbd>⇧</kbd></span>
+          <span><kbd>WASD</kbd> move</span>
+          <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v6a6 6 0 0 0 12 0V9a6 6 0 0 0-6-6Zm0 0v7"></path></svg> look</span>
+          <span><kbd>Shift</kbd> boost</span>
+          <span><kbd>Space</kbd> jump / rise</span>
+          <span><kbd>Space ×2</kbd> fly / walk</span>
+          <span><kbd>Ctrl</kbd> descend</span>
         </div>
       </div>
 

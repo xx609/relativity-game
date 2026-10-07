@@ -7,12 +7,13 @@ export interface Collider {
 }
 
 const SKIN = 0.002;
-const AXES = ['x', 'z'] as const;
+const AXES = ['x', 'y', 'z'] as const;
 
-/** Sweep a player footprint against moving boxes; slide at contact, never teleport out. */
+/** Sweep a player body against moving boxes; slide at contact, never teleport out. */
 export function moveWithCollisions(
   start: Vec3, velocity: Vec3, deltaSeconds: number, colliders: Collider[], radius = 0.38, maximumSpeed = Infinity,
-): { position: Vec3; velocity: Vec3 } {
+  halfHeight = radius,
+): { position: Vec3; velocity: Vec3; grounded: boolean } {
   let position = { ...start };
   let resolvedVelocity = { ...velocity };
   let elapsed = 0;
@@ -24,7 +25,11 @@ export function moveWithCollisions(
     for (const collider of colliders) {
       const offset = subtract(position, add(collider.center, scale(collider.velocity, elapsed)));
       const relative = subtract(resolvedVelocity, collider.velocity);
-      const half = { x: collider.halfSize.x + radius + SKIN, z: collider.halfSize.z + radius + SKIN };
+      const half = {
+        x: collider.halfSize.x + radius + SKIN,
+        y: collider.halfSize.y + halfHeight,
+        z: collider.halfSize.z + radius + SKIN,
+      };
       let entry = -Infinity;
       let exit = Infinity;
       let normal = vec();
@@ -54,7 +59,7 @@ export function moveWithCollisions(
         exit = Math.min(exit, Math.max(a, b));
       }
       if (inside) {
-        // An expanding shape or a reset can overlap the footprint. Allow escape;
+        // An expanding shape or a reset can overlap the body. Allow escape;
         // don't project the player to a different position to resolve penetration.
         if (dot(relative, insideNormal) < -1e-8) {
           firstTime = 0;
@@ -78,5 +83,15 @@ export function moveWithCollisions(
       resolvedVelocity = add(normalVelocity, clampMagnitude(tangent, Math.sqrt(Math.max(0, maximumSpeed ** 2 - normalSpeed ** 2))));
     }
   }
-  return { position, velocity: resolvedVelocity };
+  // Check support at the final position so stepping off an edge immediately
+  // removes jump eligibility, even if there was a floor contact earlier.
+  const grounded = colliders.some((collider) => {
+    const center = add(collider.center, scale(collider.velocity, deltaSeconds));
+    const top = center.y + collider.halfSize.y + halfHeight;
+    return Math.abs(position.y - top) < 1e-7
+      && Math.abs(position.x - center.x) < collider.halfSize.x + radius + SKIN
+      && Math.abs(position.z - center.z) < collider.halfSize.z + radius + SKIN
+      && resolvedVelocity.y <= collider.velocity.y + 1e-8;
+  });
+  return { position, velocity: resolvedVelocity, grounded };
 }

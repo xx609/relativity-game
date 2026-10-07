@@ -19,6 +19,9 @@
     <button id="comoving">Co-moving courier</button>
     <button id="classical">Classical</button>
     <button id="drive">Drive into object</button>
+    <button id="jump">Jump apex</button>
+    <button id="flight">Flight climb</button>
+    <button id="land">Land</button>
     <button id="delay">Toggle light delay</button>
     <button id="grid">Toggle grid</button>
   </nav>
@@ -26,6 +29,8 @@
   <script type="module">
     import { RelativityGame } from '../src/game/RelativityGame.ts';
     const game = new RelativityGame(document.querySelector('canvas'));
+    const idle = {forward: 0, right: 0, sprint: false, yaw: 0, pitch: 0, jump: false, vertical: 0, toggleFlight: false};
+    const keyboardMovement = game.input.movement.bind(game.input);
     let grid = false;
     const setPose = (velocity, position = {x: 0, y: 1.7, z: 16}) => {
       game.simulation.setPaused(true);
@@ -44,14 +49,32 @@
     document.querySelector('#grid').onclick = () => { grid = !grid; void game.setSpacetimeGrid(grid); };
     document.querySelector('#drive').onclick = () => {
       game.reset();
-      game.input.movement = () => ({forward: 1, right: 0, sprint: true, yaw: 0});
+      game.input.movement = () => ({forward: 1, right: 0, sprint: true, yaw: 0, pitch: 0, jump: false, vertical: 0, toggleFlight: false});
+    };
+    const previewMovement = (frames, movement) => {
+      game.input.movement = keyboardMovement;
+      game.simulation.setPaused(false);
+      for (let frame = 0; frame < frames; frame++) game.simulation.step(1 / 60, movement(frame));
+      game.simulation.setPaused(true);
+    };
+    document.querySelector('#jump').onclick = () => {
+      game.reset();
+      previewMovement(24, (frame) => ({...idle, jump: frame === 0}));
+    };
+    document.querySelector('#flight').onclick = () => {
+      game.reset();
+      previewMovement(100, (frame) => ({...idle, toggleFlight: frame === 0, vertical: 1}));
+      game.input.pitch = -0.35;
+    };
+    document.querySelector('#land').onclick = () => {
+      previewMovement(240, (frame) => ({...idle, toggleFlight: frame === 0 && game.simulation.player.flying}));
     };
     game.onFrame = (frame) => {
       const floor = game.world.children.find((object) => object.isMesh);
       const courier = game.visuals.get('cyan-courier').group;
       const e = courier.matrixWorld.elements;
       const width = Math.hypot(e[0], e[1], e[2]);
-      document.querySelector('#status').textContent = `β ${frame.playerRatio.toFixed(3)} | map volume ${game.world.matrix.determinant().toFixed(3)} | courier x scale ${width.toFixed(3)} | player z ${game.simulation.player.position.z.toFixed(3)} | floor attached ${floor?.parent === game.world} | ${game.effects.relativistic ? 'REL' : 'CLS'}`;
+      document.querySelector('#status').textContent = `β ${frame.playerRatio.toFixed(3)} | map volume ${game.world.matrix.determinant().toFixed(3)} | courier x scale ${width.toFixed(3)} | player z ${game.simulation.player.position.z.toFixed(3)} | player y ${game.simulation.player.position.y.toFixed(3)} | camera y ${game.camera.position.y.toFixed(3)} | ${frame.flying ? 'FLYING' : frame.grounded ? 'GROUNDED' : 'AIRBORNE'} | floor attached ${floor?.parent === game.world} | ${game.effects.relativistic ? 'REL' : 'CLS'}`;
     };
     setPose({x: 0, y: 0, z: 0});
     game.start();

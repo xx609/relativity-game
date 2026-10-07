@@ -7,6 +7,7 @@ The simulation runs at 60 Hz in the room's reference frame. Rendering interpolat
 - Distance uses arbitrary world units (`u`), time uses seconds, and `c` defaults to `12 u/s`.
 - The light-speed slider requests `6-40 u/s`. The simulation eases to that setting. Reducing `c` scales velocities continuously with it so no massive body temporarily exceeds the limit.
 - Player acceleration uses vector Einstein velocity addition. Speeds are bounded by `MAX_BETA = 0.985`.
+- Walking adds a gameplay gravity acceleration and a grounded jump impulse. Flight disables gravity, follows view pitch, and adds vertical thrust. All three velocity components share the same speed limit; gravity is a movement mechanic, not a general-relativity model.
 - Rail vehicles brake before their endpoints and reverse through zero velocity. Their positions are integrated, never snapped back to an endpoint.
 
 ## The map and all objects
@@ -43,7 +44,7 @@ Observer velocity and effect weights ease with frame-rate-independent exponentia
 
 ## Contacts and close passes
 
-Swept player-footprint collisions handle room boundaries, scenery, and moving vehicles in the simulation frame. The solver advances to first contact and slides or moves with the obstacle. It never teleports the player out of penetration; initial overlap allows motion outward. Vehicle collision footprints use world-frame contracted dimensions, and static scenery uses conservative box footprints. The same collision state remains active in classical and relativistic views.
+Swept three-dimensional player-body collisions handle the floor, room walls, scenery, and moving vehicles in the simulation frame. The solver advances to first contact and slides or moves with the obstacle. It never teleports the player out of penetration; initial overlap allows motion outward. Support at the final position enables jumping from the floor or an object. Players can fly over obstacles and the open room walls. Vehicle collision boxes use world-frame contracted dimensions, and static scenery uses conservative box footprints with heights matching the scenery. The same collision state remains active in classical and relativistic views.
 
 Rendering uses a smaller near plane and updates scene/camera matrices before picking. Together with interpolated positions and stable delayed states, these avoid clipping, stale targeting, and abrupt jumps at close range.
 

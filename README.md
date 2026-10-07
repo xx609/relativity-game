@@ -28,19 +28,29 @@ pnpm preview
 
 ## Hosting
 
-The generated `dist/` folder is a static site and can be served from GitHub Pages, Netlify, Cloudflare Pages, or any ordinary static host.
+The generated `dist/` folder is a static site and can be served ordinary static host.
+
+Or simply uses localhost:
+```
+python -m http.server 8000 --directory dist
+```
 
 ## Controls
 
 - `WASD` or arrow keys — move
 - Mouse — look
 - `Shift` — accelerate faster
+- `Space` — jump; hold to rise while flying
+- Double-tap `Space` — toggle flight (turn off to fall and land); `F` also works
+- `Ctrl` — descend while flying
 - `P` — pause
 - `R` — reset
 - `C` — classical/relativistic visual comparison
 - `Esc` — release pointer or close settings
 
 The speed-of-light control is at the bottom of the HUD. Double-clicking its slider restores the default `c = 12` demonstration setting.
+
+While flying, `WASD` follows your viewing direction. Release movement keys to slow to a hover. The speed gauge shows your movement mode and height above the floor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
 
 ## Architecture
 

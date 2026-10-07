@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { moveWithCollisions, type Collider } from '../src/simulation/collision';
 import { magnitude, subtract, vec } from '../src/simulation/relativity';
-import { MAX_BETA, WorldSimulation, type MovementInput } from '../src/simulation/world';
+import { MAX_BETA, PLAYER_HEIGHT, WorldSimulation, type MovementInput } from '../src/simulation/world';
 
-const idle: MovementInput = { forward: 0, right: 0, sprint: false, yaw: 0 };
+const idle: MovementInput = { forward: 0, right: 0, sprint: false, yaw: 0, pitch: 0, jump: false, vertical: 0, toggleFlight: false };
 const box: Collider = { center: vec(3, 0, 0), halfSize: vec(0.5, 1, 1), velocity: vec() };
 
 describe('continuous contact without position correction', () => {
@@ -94,6 +94,120 @@ describe('world continuity', () => {
     world.step(1 / 60, idle);
     expect(entity.position).toEqual(position);
     expect(world.time).toBe(1 / 60);
+  });
+});
+
+describe('jumping and flight', () => {
+  const step = (world: WorldSimulation, frames: number, input = idle): void => {
+    for (let frame = 0; frame < frames; frame += 1) world.step(1 / 60, input);
+  };
+
+  it('jumps, ignores another jump in the air, lands, and can jump again', () => {
+    const world = new WorldSimulation();
+    world.step(1 / 60, { ...idle, jump: true });
+    expect(world.player.position.y).toBeGreaterThan(PLAYER_HEIGHT);
+    expect(world.player.grounded).toBe(false);
+    const velocity = world.player.velocity.y;
+    world.step(1 / 60, { ...idle, jump: true });
+    expect(world.player.velocity.y).toBeLessThan(velocity);
+    step(world, 120);
+    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT, 8);
+    expect(world.player.velocity.y).toBe(0);
+    expect(world.player.grounded).toBe(true);
+    world.step(1 / 60, { ...idle, jump: true });
+    expect(world.player.velocity.y).toBeGreaterThan(0);
+  });
+
+  it('flies up, settles into a hover, descends, and returns to walking', () => {
+    const world = new WorldSimulation();
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    step(world, 45, { ...idle, vertical: 1 });
+    expect(world.player.flying).toBe(true);
+    expect(world.player.position.y).toBeGreaterThan(PLAYER_HEIGHT + 1);
+    step(world, 240);
+    expect(magnitude(world.player.velocity)).toBeLessThan(0.00001);
+    const hoverHeight = world.player.position.y;
+    step(world, 20, { ...idle, vertical: -1 });
+    expect(world.player.position.y).toBeLessThan(hoverHeight);
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    expect(world.player.flying).toBe(false);
+    step(world, 180);
+    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT, 8);
+    expect(world.player.grounded).toBe(true);
+  });
+
+  it('uses look pitch for flight and keeps walking level', () => {
+    const world = new WorldSimulation();
+    step(world, 20, { ...idle, forward: 1, pitch: Math.PI / 3 });
+    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT, 8);
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    step(world, 30, { ...idle, forward: 1, pitch: Math.PI / 3 });
+    expect(world.player.position.y).toBeGreaterThan(PLAYER_HEIGHT);
+    expect(world.player.velocity.z).toBeLessThan(0);
+  });
+
+  it('lands on the platform, jumps off it, and flies over its footprint', () => {
+    const world = new WorldSimulation();
+    world.player.position = vec(0, 5, 0);
+    world.player.grounded = false;
+    step(world, 180);
+    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT + 0.655, 8);
+    expect(world.player.grounded).toBe(true);
+    world.step(1 / 60, { ...idle, jump: true });
+    expect(world.player.velocity.y).toBeGreaterThan(0);
+    world.player.position = vec(0, 5, 8);
+    world.player.velocity = vec();
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    step(world, 120, { ...idle, forward: 1 });
+    expect(world.player.position.z).toBeLessThan(0);
+    expect(world.player.position.y).toBe(5);
+  });
+
+  it('keeps combined vertical and horizontal movement sublight as c falls', () => {
+    const world = new WorldSimulation();
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    for (let frame = 0; frame < 360; frame += 1) {
+      if (frame === 120) world.setLightSpeed(1);
+      const before = { ...world.player.position };
+      world.step(1 / 60, { ...idle, forward: 1, right: 1, vertical: 1, sprint: true });
+      expect(magnitude(world.player.velocity)).toBeLessThanOrEqual(world.lightSpeed * MAX_BETA + 1e-8);
+      expect(magnitude(subtract(world.player.position, before))).toBeLessThanOrEqual(world.lightSpeed * MAX_BETA / 60 + 1e-8);
+    }
+  });
+
+  it('preserves flight while paused and clears it on reset', () => {
+    const world = new WorldSimulation();
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    step(world, 30, { ...idle, vertical: 1 });
+    world.setPaused(true);
+    const position = { ...world.player.position };
+    world.step(1 / 60, { ...idle, toggleFlight: true });
+    expect(world.player.position).toEqual(position);
+    expect(world.player.flying).toBe(true);
+    world.reset();
+    expect(world.player.flying).toBe(false);
+    expect(world.player.grounded).toBe(true);
+    expect(world.player.position.y).toBe(PLAYER_HEIGHT);
+  });
+
+  it('sweeps downward and upward contacts without tunnelling', () => {
+    const platform: Collider = { center: vec(), halfSize: vec(2, 0.5, 2), velocity: vec() };
+    const landing = moveWithCollisions(vec(0, 10, 0), vec(0, -40, 0), 0.5, [platform]);
+    expect(landing.position.y).toBeCloseTo(0.88, 8);
+    expect(landing.velocity.y).toBe(0);
+    expect(landing.grounded).toBe(true);
+    const ceiling = moveWithCollisions(vec(0, -10, 0), vec(0, 40, 0), 0.5, [platform]);
+    expect(ceiling.position.y).toBeCloseTo(-0.88, 8);
+    expect(ceiling.velocity.y).toBe(0);
+    expect(ceiling.grounded).toBe(false);
+    const above = moveWithCollisions(vec(-5, 2, 0), vec(20, 0, 0), 0.5, [platform]);
+    expect(above.position.x).toBe(5);
+  });
+
+  it('loses support after moving off the edge of a platform', () => {
+    const platform: Collider = { center: vec(), halfSize: vec(2, 0.5, 2), velocity: vec() };
+    const result = moveWithCollisions(vec(2, 0.88, 0), vec(10, -1, 0), 0.2, [platform]);
+    expect(result.grounded).toBe(false);
   });
 });
 

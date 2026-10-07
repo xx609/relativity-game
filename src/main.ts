@@ -10,6 +10,7 @@ function element<T extends HTMLElement>(selector: string): T {
 
 const canvas = element<HTMLCanvasElement>('#world');
 const game = new RelativityGame(canvas);
+game.input.setActive(false);
 
 const ui = {
   startScreen: element<HTMLDivElement>('#start-screen'),
@@ -19,6 +20,9 @@ const ui = {
   playerSpeedBar: element<HTMLElement>('#player-speed-bar'),
   playerRatio: element<HTMLElement>('#player-ratio'),
   gamma: element<HTMLElement>('#gamma-readout'),
+  movementMode: element<HTMLElement>('#movement-mode'),
+  altitude: element<HTMLElement>('#altitude-readout'),
+  movementHint: element<HTMLElement>('#movement-hint'),
   targetPanel: element<HTMLElement>('#target-panel'),
   targetName: element<HTMLElement>('#target-name'),
   targetSpeed: element<HTMLElement>('#target-speed'),
@@ -49,6 +53,7 @@ function setEntered(): void {
     window.setTimeout(() => { ui.startScreen.hidden = true; }, 650);
   }
   closeSettings();
+  canvas.focus();
   game.requestPointerLock();
 }
 
@@ -83,12 +88,14 @@ function setComparison(classical: boolean): void {
 }
 
 function openSettings(): void {
+  game.input.setActive(false);
   game.input.releaseLock();
   ui.settingsPanel.hidden = false;
   ui.settingsButton.setAttribute('aria-expanded', 'true');
 }
 
 function closeSettings(): void {
+  game.input.setActive(hasEntered);
   ui.settingsPanel.hidden = true;
   ui.settingsButton.setAttribute('aria-expanded', 'false');
 }
@@ -98,6 +105,9 @@ function updateHud(frame: FrameInfo): void {
   ui.playerRatio.textContent = `${frame.playerRatio.toFixed(3)} c`;
   ui.gamma.textContent = `γ ${frame.gamma.toFixed(3)}`;
   ui.playerSpeedBar.style.width = `${Math.min(frame.playerRatio / 0.985, 1) * 100}%`;
+  ui.movementMode.textContent = frame.flying ? 'FLYING' : frame.grounded ? 'WALKING' : 'AIRBORNE';
+  ui.altitude.textContent = `${frame.altitude.toFixed(1)} u ↑`;
+  ui.movementHint.textContent = frame.flying ? 'Space ↑ · Ctrl ↓\n2× Space to walk' : 'Space jump · 2× Space fly';
 
   const target = frame.target;
   ui.targetPanel.hidden = !target;

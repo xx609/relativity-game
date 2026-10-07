@@ -1,11 +1,21 @@
 import type { MovementInput } from '../simulation/world';
 
+const MOVEMENT_KEYS = new Set([
+  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+  'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'Space', 'KeyF',
+]);
+const DOUBLE_TAP_MS = 300;
+
 export class InputController {
   yaw = 0;
   pitch = 0;
   sensitivity = 1;
   private readonly keys = new Set<string>();
   private enabled = false;
+  private active = true;
+  private jumpQueued = false;
+  private flightToggleQueued = false;
+  private lastSpacePress = -Infinity;
 
   constructor(private readonly element: HTMLElement) {
     window.addEventListener('keydown', this.onKeyDown);
@@ -29,15 +39,32 @@ export class InputController {
     if (this.isLocked) document.exitPointerLock();
   }
 
+  setActive(active: boolean): void {
+    this.active = active;
+    if (!active) this.clear();
+  }
+
+  reset(): void {
+    this.clear();
+  }
+
   movement(): MovementInput {
-    return {
+    const input: MovementInput = {
       forward: Number(this.keys.has('KeyW') || this.keys.has('ArrowUp'))
         - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')),
       right: Number(this.keys.has('KeyD') || this.keys.has('ArrowRight'))
         - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft')),
       sprint: this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'),
       yaw: this.yaw,
+      pitch: this.pitch,
+      jump: this.jumpQueued,
+      vertical: Number(this.keys.has('Space'))
+        - Number(this.keys.has('ControlLeft') || this.keys.has('ControlRight')),
+      toggleFlight: this.flightToggleQueued,
     };
+    this.jumpQueued = false;
+    this.flightToggleQueued = false;
+    return input;
   }
 
   destroy(): void {
@@ -49,7 +76,26 @@ export class InputController {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.code.startsWith('Arrow')) event.preventDefault();
+    if (!this.active || !MOVEMENT_KEYS.has(event.code) || event.altKey || event.metaKey) return;
+    if (!this.isLocked && event.target instanceof Element
+      && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+    event.preventDefault();
+    if (!event.repeat && !this.keys.has(event.code)) {
+      if (event.code === 'Space') {
+        if (event.timeStamp - this.lastSpacePress <= DOUBLE_TAP_MS) {
+          this.flightToggleQueued = true;
+          this.jumpQueued = false;
+          this.lastSpacePress = -Infinity;
+        } else {
+          this.jumpQueued = true;
+          this.lastSpacePress = event.timeStamp;
+        }
+      }
+      if (event.code === 'KeyF') {
+        this.flightToggleQueued = true;
+        this.lastSpacePress = -Infinity;
+      }
+    }
     this.keys.add(event.code);
   };
 
@@ -59,6 +105,9 @@ export class InputController {
 
   private readonly clear = (): void => {
     this.keys.clear();
+    this.jumpQueued = false;
+    this.flightToggleQueued = false;
+    this.lastSpacePress = -Infinity;
   };
 
   private readonly onPointerLockChange = (): void => {
