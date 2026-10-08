@@ -27,11 +27,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
     radial-gradient(ellipse at 0% 0%, var(--glass-reflection), transparent 58%),
     linear-gradient(135deg, rgba(255, 255, 255, .13), transparent 42%, rgba(191, 216, 206, .08) 72%, rgba(255, 255, 255, .14)),
     var(--glass-tint);
-  border: 1px solid var(--glass-edge);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .8),
-    inset 1px 0 0 rgba(255, 255, 255, .26),
-    inset 0 -1px 1px rgba(255, 255, 255, .3);
+  border: 0;
+  box-shadow: none;
   -webkit-backdrop-filter: blur(1px) saturate(125%);
   backdrop-filter: blur(1px) saturate(125%);
 }
