@@ -69,7 +69,7 @@ export class RelativityGame {
     doppler: true,
     clocks: true,
     contraction: true,
-    lightDelay: false,
+    lightDelay: true,
     relativistic: true,
     reducedMotion: false,
     lowDistortion: false,
