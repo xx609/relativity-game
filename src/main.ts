@@ -123,9 +123,9 @@ function updateHud(frame: FrameInfo): void {
   ui.targetSpeed.innerHTML = `${target.speed.toFixed(1)} <em>u/s</em>`;
   const closingRatio = target.closingSpeed / target.maxClosingSpeed;
   ui.targetArrow.textContent = closingRatio >= 0 ? '↓' : '↑';
-  ui.targetArrow.style.color = closingRatio >= 0 ? '#7dd3fc' : '#fb7185';
+  ui.targetArrow.style.color = closingRatio >= 0 ? '#426651' : '#a86646';
   ui.closingMeter.style.height = `${Math.max(8, Math.min(100, Math.abs(closingRatio) * 100))}%`;
-  ui.closingMeter.style.background = closingRatio >= 0 ? '#67e8f9' : '#fb7185';
+  ui.closingMeter.style.background = closingRatio >= 0 ? '#75946a' : '#bd8662';
 }
 
 ui.enterButton.addEventListener('click', setEntered);

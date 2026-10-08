@@ -10,10 +10,9 @@ export function createSpacetimeGrid(): SpacetimeGrid {
   const group = new THREE.Group();
   group.name = 'spacetime-grid';
   const material = new THREE.LineBasicMaterial({
-    color: 0x75e7ee,
+    color: 0x668773,
     transparent: true,
     opacity: 0.28,
-    blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const rings: THREE.LineLoop[] = [];

@@ -30,7 +30,11 @@ export class RelativisticMaterials {
           });
           shader.vertexShader = `varying vec3 relPosition;\nuniform mat4 relInverseWorld;\n${shader.vertexShader}`
             .replace('#include <project_vertex>', `#include <project_vertex>
-              relPosition = (relInverseWorld * modelMatrix * vec4(transformed, 1.0)).xyz;`);
+              vec4 relLocalPosition = vec4(transformed, 1.0);
+              #ifdef USE_INSTANCING
+                relLocalPosition = instanceMatrix * relLocalPosition;
+              #endif
+              relPosition = (relInverseWorld * modelMatrix * relLocalPosition).xyz;`);
           shader.fragmentShader = `
             varying vec3 relPosition;
             uniform vec3 relObserverBeta;
@@ -50,7 +54,7 @@ export class RelativisticMaterials {
               outgoingLight = mix(outgoingLight, relTint * relLuminance * 1.65, abs(relShift) * 0.72 * relStrength);
               #include <opaque_fragment>`);
         };
-        material.customProgramCacheKey = () => 'observer-doppler-v1';
+        material.customProgramCacheKey = () => 'observer-doppler-v2';
         material.needsUpdate = true;
       }
     });

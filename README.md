@@ -1,6 +1,6 @@
 # Relativity Game
 
-A small first-person WebGL experiment that makes special relativity visible by allowing the player to lower the simulated speed of light.
+A small first-person WebGL experiment set in Clocktower Square, a sunlit village with a working clocktower, two ground-level tram lines, cottages, and open gardens. Lower the simulated speed of light to make special relativity visible.
 
 ## Run locally
 
@@ -51,10 +51,13 @@ The speed-of-light control is at the bottom of the HUD. Double-clicking its slid
 
 While flying, `WASD` moves horizontally in the direction you face, regardless of how far up or down you look. Only `Space` and `Shift` control vertical thrust. Release movement keys to slow to a hover. The speed gauge shows your movement mode and height above the floor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
 
+The square and meadow are open to explore. Tracks and planting are passable; the clocktower, cottages, and two trams are solid. The old central platform, perimeter walls, and scattered blocking props have been removed.
+
 ## Architecture
 
 - `src/simulation/` — renderer-independent fixed-step world and relativity math
 - `src/game/` — Three.js scene, input, and visual effects
+- `src/simulation/townLayout.ts` — shared town footprints and rail positions
 - `src/features/` — lazy-loaded optional scenery and spacetime overlay
 - `tests/` — numerical behavior tests
 

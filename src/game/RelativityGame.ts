@@ -12,12 +12,13 @@ import {
 import {
   MAX_BETA,
   PLAYER_HEIGHT,
-  ROOM_HALF_SIZE,
   WorldSimulation,
   type WorldEntity,
 } from '../simulation/world';
 import { contractionMatrix, observerWorldMatrix } from './observerFrame';
 import { RelativisticMaterials } from './RelativisticMaterials';
+import { CLOCKTOWER } from '../simulation/townLayout';
+import { buildTownSquare, buildTram } from './townScenery';
 
 export interface EffectSettings {
   doppler: boolean;
@@ -80,7 +81,8 @@ export class RelativityGame {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly world = new THREE.Group();
-  private readonly camera = new THREE.PerspectiveCamera(72, 1, 0.015, 200);
+  // Improve depth precision while retaining clearance against contracted walls.
+  private readonly camera = new THREE.PerspectiveCamera(72, 1, 0.03, 600);
   private readonly materialEffects = new RelativisticMaterials();
   private readonly referenceClocks: Array<{ group: THREE.Group; hand: THREE.Object3D }> = [];
   private readonly observerBeta = new THREE.Vector3();
@@ -106,7 +108,7 @@ export class RelativityGame {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.12;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -304,111 +306,39 @@ export class RelativityGame {
     this.world.name = 'observer-relative-world';
     this.world.matrixAutoUpdate = false;
     this.scene.add(this.world);
-    this.scene.background = new THREE.Color(0x07131f);
-    this.scene.fog = new THREE.FogExp2(0x07131f, 0.017);
+    this.scene.background = new THREE.Color(0xc8e1df);
+    this.scene.fog = new THREE.Fog(0xc8e1df, 65, 180);
 
-    const hemisphere = new THREE.HemisphereLight(0x9de9ff, 0x152230, 1.8);
+    const hemisphere = new THREE.HemisphereLight(0xe4f1ef, 0xa79b74, 2.3);
     this.world.add(hemisphere);
-    const key = new THREE.DirectionalLight(0xd7fbff, 2.8);
-    key.position.set(-13, 22, 10);
+    const key = new THREE.DirectionalLight(0xffe5b4, 2.7);
+    key.position.set(-25, 38, 18);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -35;
-    key.shadow.camera.right = 35;
-    key.shadow.camera.top = 35;
-    key.shadow.camera.bottom = -35;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.left = -45;
+    key.shadow.camera.right = 45;
+    key.shadow.camera.top = 45;
+    key.shadow.camera.bottom = -45;
+    key.shadow.camera.far = 120;
+    key.shadow.normalBias = 0.05;
     this.world.add(key, key.target);
 
-    this.buildRoom();
+    buildTownSquare(this.world);
     this.buildReferenceClocks();
     for (const entity of this.simulation.entities) this.buildEntity(entity);
     this.materialEffects.attach(this.world);
     this.camera.userData.baseFov = this.camera.fov;
   }
 
-  private buildRoom(): void {
-    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x101f2b, roughness: 0.86, metalness: 0.16 });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(62, 62), floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    this.world.add(floor);
-
-    const grid = new THREE.GridHelper(60, 30, 0x36606c, 0x1b3542);
-    grid.position.y = 0.012;
-    const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
-    for (const material of gridMaterials) { material.transparent = true; material.opacity = 0.48; }
-    this.world.add(grid);
-
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x142633, roughness: 0.78, metalness: 0.1 });
-    const accentMaterial = new THREE.MeshStandardMaterial({ color: 0x235366, emissive: 0x0c3643, emissiveIntensity: 0.55 });
-    for (let side = -1; side <= 1; side += 2) {
-      const wallX = new THREE.Mesh(new THREE.BoxGeometry(0.45, 8, 61), wallMaterial);
-      wallX.position.set(side * 30.2, 4, 0);
-      wallX.receiveShadow = true;
-      this.world.add(wallX);
-      const wallZ = new THREE.Mesh(new THREE.BoxGeometry(61, 8, 0.45), wallMaterial);
-      wallZ.position.set(0, 4, side * 30.2);
-      wallZ.receiveShadow = true;
-      this.world.add(wallZ);
-    }
-
-    for (let index = -4; index <= 4; index += 1) {
-      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 5, 0.22), accentMaterial);
-      pillar.position.set(index * 6, 2.5, -29.9);
-      this.world.add(pillar);
-      const lamp = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.08, 0.12), accentMaterial);
-      lamp.position.set(index * 6, 5.2, -29.6);
-      this.world.add(lamp);
-    }
-
-    this.buildRail(-10, 'x');
-    this.buildRail(10, 'x');
-    this.buildRail(14, 'z');
-    this.buildRail(-14, 'z');
-
-    const center = new THREE.Mesh(
-      new THREE.CylinderGeometry(4.2, 5.5, 0.65, 8),
-      new THREE.MeshStandardMaterial({ color: 0x1b3340, roughness: 0.55, metalness: 0.5 }),
-    );
-    center.position.y = 0.33;
-    center.receiveShadow = true;
-    this.world.add(center);
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(4.6, 0.06, 6, 64),
-      new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.7 }),
-    );
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = 0.7;
-    this.world.add(ring);
-  }
-
-  private buildRail(offset: number, axis: 'x' | 'z'): void {
-    const railMaterial = new THREE.MeshStandardMaterial({ color: 0x314955, roughness: 0.46, metalness: 0.65 });
-    const markerMaterial = new THREE.MeshBasicMaterial({ color: axis === 'x' ? 0x4dc7d6 : 0xa879df });
-    const rail = new THREE.Group();
-    for (const lateral of [-1.3, 1.3]) {
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(52, 0.09, 0.1), railMaterial);
-      beam.position.z = offset + lateral;
-      beam.position.y = 0.08;
-      rail.add(beam);
-    }
-    for (let index = -11; index <= 11; index += 1) {
-      const marker = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 1.9), markerMaterial);
-      marker.position.set(index * 2.2, 0.14, offset);
-      rail.add(marker);
-    }
-    if (axis === 'z') rail.rotation.y = Math.PI / 2;
-    this.world.add(rail);
-  }
-
   private buildReferenceClocks(): void {
-    const positions: Array<[number, number, number]> = [
-      [-24, 3, -24], [24, 3, -24], [-24, 3, 24], [24, 3, 24],
-    ];
-    for (const [x, y, z] of positions) {
-      const clock = this.createClock(1.25, 0x89dce7);
-      clock.group.position.set(x, y, z);
-      clock.group.lookAt(0, y, 0);
+    for (let side = 0; side < 4; side += 1) {
+      const angle = side * Math.PI / 2;
+      const clock = this.createClock(1.28, 0x66583f);
+      clock.group.position.set(
+        CLOCKTOWER.x + Math.sin(angle) * 2.14, 12.6,
+        CLOCKTOWER.z + Math.cos(angle) * 2.14,
+      );
+      clock.group.rotation.y = angle;
       this.world.add(clock.group);
       this.referenceClocks.push(clock);
     }
@@ -419,67 +349,22 @@ export class RelativityGame {
     group.name = entity.id;
     group.matrixAutoUpdate = false;
     group.position.set(entity.position.x, entity.position.y, entity.position.z);
-    const material = this.makeEntityMaterial(entity.baseColor);
+    const tram = buildTram(entity);
+    tram.traverse((child) => {
+      if (child instanceof THREE.Mesh) child.userData.entityId = entity.id;
+    });
+    group.add(tram);
 
-    if (entity.kind === 'courier') {
-      const shell = new THREE.Mesh(new THREE.BoxGeometry(entity.size.x, entity.size.y, entity.size.z), material);
-      shell.geometry.translate(0, 0.1, 0);
-      shell.castShadow = true;
-      shell.receiveShadow = true;
-      shell.userData.entityId = entity.id;
-      group.add(shell);
-
-      const noseMaterial = this.makeEntityMaterial(0xe7f8f7);
-      const nose = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.92, 1.15, 6), noseMaterial);
-      nose.rotation.z = -Math.PI / 2;
-      nose.position.x = entity.size.x * 0.55;
-      nose.userData.entityId = entity.id;
-      group.add(nose);
-
-      for (const z of [-0.68, 0.68]) {
-        const runner = new THREE.Mesh(
-          new THREE.BoxGeometry(entity.size.x * 0.82, 0.22, 0.14),
-          new THREE.MeshStandardMaterial({ color: 0x172733, metalness: 0.7, roughness: 0.35 }),
-        );
-        runner.position.set(0, -entity.size.y * 0.48, z);
-        group.add(runner);
-      }
-    } else if (entity.kind === 'pod') {
-      const shell = new THREE.Mesh(new THREE.OctahedronGeometry(1.45, 0), material);
-      shell.scale.set(0.85, 1, 1.2);
-      shell.castShadow = true;
-      shell.userData.entityId = entity.id;
-      group.add(shell);
-      const band = new THREE.Mesh(
-        new THREE.TorusGeometry(1.35, 0.08, 6, 24),
-        new THREE.MeshBasicMaterial({ color: 0xe2d5ff }),
-      );
-      band.rotation.x = Math.PI / 2;
-      band.userData.entityId = entity.id;
-      group.add(band);
-    } else {
-      const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), material);
-      shell.castShadow = true;
-      shell.userData.entityId = entity.id;
-      group.add(shell);
-      const halo = new THREE.Mesh(
-        new THREE.TorusGeometry(1.55, 0.035, 5, 48),
-        new THREE.MeshBasicMaterial({ color: entity.baseColor, transparent: true, opacity: 0.7 }),
-      );
-      halo.rotation.x = Math.PI / 2;
-      group.add(halo);
-    }
-
-    const clock = this.createClock(0.5, 0xe5fbff);
-    clock.group.position.set(0, entity.size.y * 0.1, entity.size.z * 0.52 + 0.03);
+    const clock = this.createClock(0.28, 0x66583f);
+    clock.group.position.set(0, -0.58, entity.size.z * 0.5 + 0.04);
     group.add(clock.group);
 
     const arrow = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2, 0.65, 4),
-      new THREE.MeshBasicMaterial({ color: 0xe7fbff, transparent: true, opacity: 0.7 }),
+      new THREE.ConeGeometry(0.12, 0.4, 4),
+      new THREE.MeshStandardMaterial({ color: 0xa0834b, roughness: 0.8 }),
     );
     arrow.rotation.z = -Math.PI / 2;
-    arrow.position.y = entity.size.y + 0.8;
+    arrow.position.y = 1.5;
     group.add(arrow);
 
     group.traverse((child) => {
@@ -500,19 +385,31 @@ export class RelativityGame {
     const group = new THREE.Group();
     const face = new THREE.Mesh(
       new THREE.CircleGeometry(radius, 24),
-      new THREE.MeshStandardMaterial({ color: 0x102631, roughness: 0.45, metalness: 0.25, side: THREE.DoubleSide }),
+      new THREE.MeshStandardMaterial({ color: 0xfff1d2, roughness: 0.9, side: THREE.DoubleSide }),
     );
     group.add(face);
     const rim = new THREE.Mesh(
       new THREE.TorusGeometry(radius, radius * 0.055, 5, 32),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 }),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.75 }),
     );
     rim.position.z = 0.015;
     group.add(rim);
+    const ink = new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
+    for (let index = 0; index < 12; index += 1) {
+      const angle = index * Math.PI / 6;
+      const tick = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.04, radius * (index % 3 === 0 ? 0.18 : 0.1), 0.018), ink);
+      tick.position.set(Math.sin(angle) * radius * 0.82, Math.cos(angle) * radius * 0.82, 0.025);
+      tick.rotation.z = -angle;
+      group.add(tick);
+    }
+    const hour = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.07, radius * 0.48, 0.025), ink);
+    hour.position.set(radius * 0.14, radius * 0.1, 0.035);
+    hour.rotation.z = -Math.PI / 3;
+    group.add(hour);
     const hand = new THREE.Group();
     const handMesh = new THREE.Mesh(
       new THREE.BoxGeometry(radius * 0.055, radius * 0.7, radius * 0.035),
-      new THREE.MeshBasicMaterial({ color }),
+      ink,
     );
     handMesh.position.y = radius * 0.28;
     hand.add(handMesh);
@@ -521,20 +418,9 @@ export class RelativityGame {
     return { group, hand };
   }
 
-  private makeEntityMaterial(color: number): THREE.MeshStandardMaterial {
-    const material = new THREE.MeshStandardMaterial({
-      color,
-      roughness: 0.4,
-      metalness: 0.25,
-      flatShading: true,
-    });
-    material.userData.baseColor = new THREE.Color(color);
-    return material;
-  }
-
   private async loadAmbientDetails(): Promise<void> {
     const { addAmbientDetails } = await import('../features/ambientDetails');
-    addAmbientDetails(this.world, ROOM_HALF_SIZE);
+    addAmbientDetails(this.world);
     this.materialEffects.attach(this.world);
   }
 

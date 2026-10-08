@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>Relativity visual regression</title>
   <style>
-    body { margin: 0; background: #07131f; color: #c6f1fa; font: 14px system-ui; }
+    body { margin: 0; background: #f4efdf; color: #426651; font: 14px system-ui; }
     canvas { width: 100vw; height: 78vh; display: block; }
     nav, output { display: block; padding: 10px; }
     button { padding: 8px; margin: 3px; }
@@ -14,6 +14,9 @@
   <canvas id="world"></canvas>
   <nav>
     <button id="rest">At rest</button>
+    <button id="overview">Square overview</button>
+    <button id="tower">Tower surface</button>
+    <button id="ground">Ground surface</button>
     <button id="forward">Forward 0.8 c</button>
     <button id="diagonal">Diagonal 0.8 c</button>
     <button id="comoving">Co-moving courier</button>
@@ -32,7 +35,9 @@
     const idle = {forward: 0, right: 0, sprint: false, yaw: 0, pitch: 0, jump: false, vertical: 0, toggleFlight: false};
     const keyboardMovement = game.input.movement.bind(game.input);
     let grid = false;
-    const setPose = (velocity, position = {x: 0, y: 1.7, z: 16}) => {
+    const setPose = (velocity, position = {x: 0, y: 1.7, z: 16}, pitch = 0) => {
+      game.input.yaw = 0;
+      game.input.pitch = pitch;
       game.simulation.setPaused(true);
       game.effects.relativistic = true;
       game.simulation.player.position = {...position};
@@ -41,9 +46,12 @@
       game.simulation.previousPlayer.velocity = {...velocity};
     };
     document.querySelector('#rest').onclick = () => setPose({x: 0, y: 0, z: 0});
+    document.querySelector('#overview').onclick = () => setPose({x: 0, y: 0, z: 0}, {x: 0, y: 20, z: 38}, -0.4);
+    document.querySelector('#tower').onclick = () => setPose({x: 0, y: 0, z: 0}, {x: 0.7, y: 12.6, z: -7}, 0);
+    document.querySelector('#ground').onclick = () => setPose({x: 0, y: 0, z: 0}, {x: 2, y: 12, z: 24}, -0.5);
     document.querySelector('#forward').onclick = () => setPose({x: 0, y: 0, z: -9.6});
     document.querySelector('#diagonal').onclick = () => setPose({x: 6.7882250994, y: 0, z: -6.7882250994});
-    document.querySelector('#comoving').onclick = () => setPose({x: 5.2, y: 0, z: 0}, {x: -10, y: 1.7, z: -4});
+    document.querySelector('#comoving').onclick = () => setPose({x: 5.2, y: 0, z: 0}, {x: -10, y: 1.7, z: -1});
     document.querySelector('#classical').onclick = () => { game.effects.relativistic = !game.effects.relativistic; };
     document.querySelector('#delay').onclick = () => { game.effects.lightDelay = !game.effects.lightDelay; };
     document.querySelector('#grid').onclick = () => { grid = !grid; void game.setSpacetimeGrid(grid); };

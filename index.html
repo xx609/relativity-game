@@ -3,27 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#08121f" />
+    <meta name="theme-color" content="#f5efd9" />
     <meta
       name="description"
-      content="A first-person interactive experiment that makes special relativity visible."
+      content="Explore relativity in a sunlit village square with a clocktower and passing trams."
     />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='27' fill='%230b1727' stroke='%2367e8f9' stroke-width='3'/%3E%3Cpath d='M12 36c12-1 22-8 37-21-7 17-16 29-34 34 7-5 10-9 12-14-5 2-10 2-15 1Z' fill='%2367e8f9'/%3E%3C/svg%3E" />
-    <title>Relativity</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='27' fill='%23fff1d2' stroke='%23688560' stroke-width='3'/%3E%3Cpath d='M32 14v18l12 8' fill='none' stroke='%23688560' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <title>Clocktower Square · Relativity</title>
   </head>
   <body>
     <div id="app">
       <canvas id="world" aria-label="Relativity simulation" tabindex="0"></canvas>
 
-      <div class="vignette" aria-hidden="true"></div>
       <div class="reticle" aria-hidden="true"><i></i><i></i></div>
 
       <header class="brand" aria-label="Relativity">
         <svg viewBox="0 0 44 44" aria-hidden="true">
           <circle cx="22" cy="22" r="18"></circle>
-          <path d="M8 25c8-1 15-5 25-14-4 12-10 20-23 23 5-3 7-6 8-10-3 1-7 2-10 1Z"></path>
+          <path d="M22 10v12l8 5M22 5v3M22 36v3M5 22h3M36 22h3"></path>
         </svg>
-        <span>RELATIVITY</span>
+        <span>Relativity<small>Clocktower Square</small></span>
       </header>
 
       <section class="speed-gauge glass" aria-label="Player speed">
@@ -81,9 +80,11 @@
       </aside>
 
       <div id="start-screen" class="start-screen">
-        <div class="start-orbit" aria-hidden="true"><i></i><i></i><b></b></div>
-        <h1>RELATIVITY</h1>
-        <button id="enter-button" type="button"><span>ENTER</span><i>→</i></button>
+        <p class="start-eyebrow">Relativity · a place to wander</p>
+        <h1>Clocktower<br />Square</h1>
+        <p class="start-description">A little village. A different pace of time.</p>
+        <button id="enter-button" type="button"><span>Take a stroll</span><i>→</i></button>
+        <p class="start-controls">WASD to move &nbsp; · &nbsp; Mouse to look</p>
       </div>
 
       <div id="move-hint" class="control-hint move-hint" role="note" aria-label="WASD to move" hidden>
@@ -94,6 +95,7 @@
         <span aria-hidden="true">to move</span>
       </div>
       <div id="cursor-hint" class="control-hint cursor-hint" hidden><kbd>Esc</kbd><span>to show cursor</span></div>
+      <div class="flight-hint">Space ×2 <span>fly / land</span><br />Space <span>up</span> &nbsp; Shift <span>down</span></div>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>

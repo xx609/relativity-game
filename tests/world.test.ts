@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { moveWithCollisions, type Collider } from '../src/simulation/collision';
 import { magnitude, subtract, vec } from '../src/simulation/relativity';
 import { MAX_BETA, PLAYER_HEIGHT, WorldSimulation, type MovementInput } from '../src/simulation/world';
+import { CLOCKTOWER, COTTAGES, COTTAGE_ROOF_HEIGHT } from '../src/simulation/townLayout';
 
 const idle: MovementInput = { forward: 0, right: 0, sprint: false, yaw: 0, pitch: 0, jump: false, vertical: 0, toggleFlight: false };
 const box: Collider = { center: vec(3, 0, 0), halfSize: vec(0.5, 1, 1), velocity: vec() };
@@ -44,14 +45,13 @@ describe('continuous contact without position correction', () => {
 });
 
 describe('world continuity', () => {
-  it('keeps player steps bounded while repeatedly running into vehicles and boundaries', () => {
+  it('keeps player steps bounded while running through the town and meadow', () => {
     const world = new WorldSimulation();
     for (let frame = 0; frame < 1800; frame += 1) {
       const before = { ...world.player.position };
       world.step(1 / 60, { ...idle, forward: 1, right: frame > 700 ? 1 : 0, sprint: true });
       expect(magnitude(subtract(world.player.position, before))).toBeLessThanOrEqual(world.lightSpeed / 60 + 1e-6);
-      expect(Math.abs(world.player.position.x)).toBeLessThan(30);
-      expect(Math.abs(world.player.position.z)).toBeLessThan(30);
+      expect(world.player.position.y).toBeGreaterThanOrEqual(PLAYER_HEIGHT - 1e-8);
     }
   });
   it('brakes through rail turnarounds without repositioning an entity', () => {
@@ -156,12 +156,12 @@ describe('jumping and flight', () => {
     }
   });
 
-  it('lands on the platform, jumps off it, and flies over its footprint', () => {
+  it('lands in the open square, jumps, and flies across the former platform', () => {
     const world = new WorldSimulation();
     world.player.position = vec(0, 5, 0);
     world.player.grounded = false;
     step(world, 180);
-    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT + 0.655, 8);
+    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT, 8);
     expect(world.player.grounded).toBe(true);
     world.step(1 / 60, { ...idle, jump: true });
     expect(world.player.velocity.y).toBeGreaterThan(0);
@@ -171,6 +171,43 @@ describe('jumping and flight', () => {
     step(world, 120, { ...idle, forward: 1 });
     expect(world.player.position.z).toBeLessThan(0);
     expect(world.player.position.y).toBe(5);
+  });
+
+  it('walks across the rails and square without scenery blocking the route', () => {
+    const world = new WorldSimulation();
+    // Isolate stationary scenery from the two moving trams.
+    world.entities = [];
+    world.player.position = vec(8, PLAYER_HEIGHT, 16);
+    step(world, 240, { ...idle, forward: 1 });
+    expect(world.player.position.z).toBeLessThan(-10);
+    expect(world.player.position.y).toBeCloseTo(PLAYER_HEIGHT, 8);
+    world.player.position = vec(32, PLAYER_HEIGHT, 0);
+    world.player.velocity = vec();
+    step(world, 60, { ...idle, right: 1 });
+    expect(world.player.position.x).toBeGreaterThan(34);
+  });
+
+  it('keeps the tower solid while allowing a clear path beside it', () => {
+    const world = new WorldSimulation();
+    world.entities = [];
+    world.player.position = vec(CLOCKTOWER.x, PLAYER_HEIGHT, CLOCKTOWER.z + 8);
+    step(world, 180, { ...idle, forward: 1 });
+    expect(world.player.position.z).toBeCloseTo(CLOCKTOWER.z + CLOCKTOWER.depth / 2 + 0.382, 6);
+    world.player.position.x = CLOCKTOWER.x + 4;
+    step(world, 120, { ...idle, forward: 1 });
+    expect(world.player.position.z).toBeLessThan(CLOCKTOWER.z - 2);
+  });
+
+  it('lands on a cottage roof and can jump off it', () => {
+    const world = new WorldSimulation();
+    const cottage = COTTAGES[0];
+    world.player.position = vec(cottage.x, 15, cottage.z);
+    world.player.grounded = false;
+    step(world, 180);
+    expect(world.player.position.y).toBeCloseTo(cottage.height + COTTAGE_ROOF_HEIGHT + PLAYER_HEIGHT, 8);
+    expect(world.player.grounded).toBe(true);
+    world.step(1 / 60, { ...idle, jump: true });
+    expect(world.player.velocity.y).toBeGreaterThan(0);
   });
 
   it('keeps combined vertical and horizontal movement sublight as c falls', () => {

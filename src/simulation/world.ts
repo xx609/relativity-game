@@ -11,6 +11,7 @@ import {
   vec,
 } from './relativity';
 import { moveWithCollisions, type Collider } from './collision';
+import { CLOCKTOWER, COTTAGES, COTTAGE_ROOF_HEIGHT, RAIL_LINES, RAIL_EXTENT } from './townLayout';
 
 export const DEFAULT_LIGHT_SPEED = 12;
 export const MAX_BETA = 0.985;
@@ -65,28 +66,16 @@ export interface SampledEntityState {
 
 const INITIAL_ENTITIES: ReadonlyArray<Omit<WorldEntity, 'properTime'>> = [
   {
-    id: 'cyan-courier', shortName: 'COURIER 01', kind: 'courier',
-    position: { x: -10, y: 1.35, z: -10 }, velocity: { x: 5.2, y: 0, z: 0 },
-    rail: { axis: 'x', minimum: -24, maximum: 24, cruiseSpeed: 5.2, direction: 1 },
-    baseColor: 0x55ddea, size: { x: 4.1, y: 1.45, z: 2.1 },
+    id: 'cyan-courier', shortName: 'SAGE TRAM', kind: 'courier',
+    position: { x: -10, y: 1.4, z: RAIL_LINES[0] }, velocity: { x: 5.2, y: 0, z: 0 },
+    rail: { axis: 'x', minimum: -RAIL_EXTENT + 2, maximum: RAIL_EXTENT - 2, cruiseSpeed: 5.2, direction: 1 },
+    baseColor: 0x6d9481, size: { x: 3.8, y: 2.3, z: 1.9 },
   },
   {
-    id: 'amber-courier', shortName: 'COURIER 02', kind: 'courier',
-    position: { x: 5.5, y: 1.35, z: 10 }, velocity: { x: -4.1, y: 0, z: 0 },
-    rail: { axis: 'x', minimum: -24, maximum: 24, cruiseSpeed: 4.1, direction: -1 },
-    baseColor: 0xf2a65a, size: { x: 3.5, y: 1.35, z: 2 },
-  },
-  {
-    id: 'violet-pod', shortName: 'POD 03', kind: 'pod',
-    position: { x: 14, y: 1.5, z: -21 }, velocity: { x: 0, y: 0, z: 3.4 },
-    rail: { axis: 'z', minimum: -24, maximum: 24, cruiseSpeed: 3.4, direction: 1 },
-    baseColor: 0xb68cff, size: { x: 2, y: 2.1, z: 3.2 },
-  },
-  {
-    id: 'signal-orb', shortName: 'SIGNAL 04', kind: 'orb',
-    position: { x: -14, y: 2.2, z: 19 }, velocity: { x: 0, y: 0, z: -2.5 },
-    rail: { axis: 'z', minimum: -23, maximum: 23, cruiseSpeed: 2.5, direction: -1 },
-    baseColor: 0xf472b6, size: { x: 1.8, y: 1.8, z: 1.8 },
+    id: 'amber-courier', shortName: 'HONEY TRAM', kind: 'courier',
+    position: { x: 5.5, y: 1.4, z: RAIL_LINES[1] }, velocity: { x: -4.1, y: 0, z: 0 },
+    rail: { axis: 'x', minimum: -RAIL_EXTENT + 2, maximum: RAIL_EXTENT - 2, cruiseSpeed: 4.1, direction: -1 },
+    baseColor: 0xc89059, size: { x: 3.8, y: 2.3, z: 1.9 },
   },
 ];
 
@@ -226,17 +215,35 @@ export class WorldSimulation {
     const colliders: Collider[] = [
       { center: vec(0, -1, 0), halfSize: vec(Infinity, 1, Infinity), velocity: vec() },
     ];
-    for (const sign of [-1, 1]) {
-      colliders.push({ center: vec(sign * 30.2, 4, 0), halfSize: vec(0.225, 4, 31), velocity: vec() });
-      colliders.push({ center: vec(0, 4, sign * 30.2), halfSize: vec(31, 4, 0.225), velocity: vec() });
+    colliders.push({
+      center: vec(CLOCKTOWER.x, CLOCKTOWER.height / 2, CLOCKTOWER.z),
+      halfSize: vec(CLOCKTOWER.width / 2, CLOCKTOWER.height / 2, CLOCKTOWER.depth / 2), velocity: vec(),
+    });
+    // Stepped roof envelopes allow landing and prevent flying through roofs.
+    for (let tier = 0; tier < 4; tier += 1) {
+      const halfWidth = CLOCKTOWER.roofWidth / 2 * (1 - tier / 4);
+      colliders.push({
+        center: vec(CLOCKTOWER.x, CLOCKTOWER.height + CLOCKTOWER.roofHeight / 4 * (tier + 0.5), CLOCKTOWER.z),
+        halfSize: vec(halfWidth, CLOCKTOWER.roofHeight / 8, halfWidth), velocity: vec(),
+      });
     }
-    // Conservative footprints for the central platform and peripheral plinths.
-    colliders.push({ center: vec(0, 0.33, 0), halfSize: vec(5.1, 0.325, 5.1), velocity: vec() });
-    for (let index = 0; index < 18; index += 1) {
-      const angle = index / 18 * Math.PI * 2;
-      const radius = ROOM_HALF_SIZE - 3.2 - index % 3 * 0.55;
-      const height = 0.7 + index % 4 * 0.35;
-      colliders.push({ center: vec(Math.cos(angle) * radius, height / 2, Math.sin(angle) * radius), halfSize: vec(0.75, height / 2, 0.75), velocity: vec() });
+    // Only substantial architecture is solid. Rails and planting leave the
+    // square easy to cross, and the meadow has no invisible perimeter wall.
+    for (const cottage of COTTAGES) {
+      const turned = Math.abs(cottage.angle) > 0.1;
+      colliders.push({
+        center: vec(cottage.x, cottage.height / 2, cottage.z),
+        halfSize: vec((turned ? cottage.depth : cottage.width) / 2, cottage.height / 2, (turned ? cottage.width : cottage.depth) / 2),
+        velocity: vec(),
+      });
+      for (let tier = 0; tier < 4; tier += 1) {
+        const width = (cottage.width + 0.55) / 2;
+        const depth = (cottage.depth + 0.65) / 2 * (1 - tier / 4);
+        colliders.push({
+          center: vec(cottage.x, cottage.height + COTTAGE_ROOF_HEIGHT / 4 * (tier + 0.5), cottage.z),
+          halfSize: vec(turned ? depth : width, COTTAGE_ROOF_HEIGHT / 8, turned ? width : depth), velocity: vec(),
+        });
+      }
     }
     return colliders;
   }
@@ -323,9 +330,7 @@ export class WorldSimulation {
 }
 
 export function entityHalfSize(entity: WorldEntity, lightSpeed: number): Vec3 {
-  const half = entity.kind === 'courier'
-    ? vec(entity.size.x * 0.55 + 0.6, entity.size.y / 2, entity.size.z / 2 + 0.1)
-    : entity.kind === 'pod' ? vec(1.45, 1.5, 1.75) : vec(1.6, 1.6, 1.6);
+  const half = vec(entity.size.x / 2 + 0.1, entity.size.y / 2, entity.size.z / 2 + 0.08);
   half[entity.rail.axis] *= contractionFactor(magnitude(entity.velocity), lightSpeed);
   return half;
 }
