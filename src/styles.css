@@ -174,10 +174,15 @@ body:has(.settings-panel:not([hidden])) .move-hint { visibility: hidden; }
 }
 .jump-button svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.6; }
 .jump-button.active { color: rgba(45, 49, 50, .94); background-color: rgba(139, 145, 146, .46); transform: scale(.94); }
+.touch-input .control-dock {
+  top: auto;
+  bottom: calc(158px + env(safe-area-inset-bottom));
+  width: calc(100% - 30px);
+  max-width: 440px;
+}
 .touch-input .settings-button { top: 96px; bottom: auto; }
 .touch-input .settings-panel { top: 146px; bottom: auto; max-height: calc(100vh - 166px); }
-.touch-input:has(.settings-panel:not([hidden])) .touch-controls { opacity: .22; pointer-events: none; }
-.touch-input:has(.settings-panel:not([hidden])) :is(.move-joystick, .jump-button) { pointer-events: none; }
+.touch-input:has(.settings-panel:not([hidden])) :is(.control-dock, .touch-controls) { visibility: hidden; pointer-events: none; }
 body:has(.start-screen:not(.dismissed)) .touch-controls { visibility: hidden; pointer-events: none; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass { background: rgba(238, 247, 241, .92); }
@@ -196,7 +201,6 @@ body:has(.start-screen:not(.dismissed)) .touch-controls { visibility: hidden; po
   .settings-button { right: 18px; bottom: 96px; }
   .settings-panel { right: 18px; bottom: 145px; max-height: calc(100vh - 169px); }
   .start-screen { padding: 24px 6vw; }
-  .touch-input .control-dock { bottom: calc(156px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -205,8 +209,60 @@ body:has(.start-screen:not(.dismissed)) .touch-controls { visibility: hidden; po
   .brand span { display: none; }
   .move-hint { bottom: 152px; }
 }
-@media (max-height: 520px) and (pointer: coarse) {
-  .move-joystick { width: 104px; height: 104px; }
-  .joystick-ring { width: 94px; height: 94px; }
-  .jump-button { width: 68px; height: 68px; bottom: max(29px, env(safe-area-inset-bottom)); }
+@media (max-height: 520px) {
+  .touch-input .move-joystick { width: 104px; height: 104px; }
+  .touch-input .joystick-ring { width: 94px; height: 94px; }
+  .touch-input .jump-button { width: 68px; height: 68px; bottom: max(29px, env(safe-area-inset-bottom)); }
+}
+@media (orientation: landscape) {
+  .touch-input .brand { top: 14px; left: max(14px, env(safe-area-inset-left)); }
+  .touch-input .brand span { display: none; }
+  .touch-input .speed-gauge {
+    top: 12px;
+    right: max(12px, env(safe-area-inset-right));
+    width: 180px;
+    padding: 8px 12px;
+  }
+  .touch-input .gauge-heading strong { font-size: 20px; }
+  .touch-input .gauge-track { margin: 6px 0 5px; }
+  .touch-input .settings-button {
+    top: 15px;
+    right: calc(max(12px, env(safe-area-inset-right)) + 190px);
+  }
+  .touch-input .settings-panel {
+    top: 80px;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: auto;
+    max-height: calc(100dvh - 92px);
+  }
+  .touch-input .control-dock {
+    top: auto;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    width: min(440px, calc(100% - 260px));
+    height: 50px;
+    padding-block: 4px;
+    gap: 2px;
+  }
+  .touch-input .icon-button { width: 36px; flex-shrink: 0; }
+  .touch-input .light-control {
+    flex: 1;
+    grid-template-columns: 18px 11px minmax(40px, 1fr) 34px;
+    gap: 5px;
+    padding-inline: 2px;
+  }
+  .touch-input .compare-button { width: 56px; flex-shrink: 0; }
+}
+@media (orientation: landscape) and (max-width: 600px) {
+  .touch-input .light-control { grid-template-columns: 11px minmax(40px, 1fr) 32px; }
+}
+@media (orientation: landscape) and (max-width: 520px) {
+  .touch-input .icon-button { width: 30px; }
+  .touch-input .dock-divider { margin-inline: 1px; }
+  .touch-input .light-control {
+    grid-template-columns: minmax(40px, 1fr);
+    padding-inline: 0;
+  }
+  .touch-input .light-control :is(svg, span, output) { display: none; }
+  .touch-input .compare-button { width: 40px; }
+  .touch-input .compare-button span { display: none; }
 }
