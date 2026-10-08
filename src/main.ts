@@ -21,11 +21,6 @@ const ui = {
   playerSpeedBar: element<HTMLElement>('#player-speed-bar'),
   playerRatio: element<HTMLElement>('#player-ratio'),
   gamma: element<HTMLElement>('#gamma-readout'),
-  targetPanel: element<HTMLElement>('#target-panel'),
-  targetName: element<HTMLElement>('#target-name'),
-  targetSpeed: element<HTMLElement>('#target-speed'),
-  targetArrow: element<HTMLElement>('#target-arrow'),
-  closingMeter: element<HTMLElement>('#closing-meter-fill'),
   pauseButton: element<HTMLButtonElement>('#pause-button'),
   resetButton: element<HTMLButtonElement>('#reset-button'),
   lightSpeed: element<HTMLInputElement>('#light-speed'),
@@ -109,19 +104,6 @@ function updateHud(frame: FrameInfo): void {
   ui.playerRatio.textContent = `${frame.playerRatio.toFixed(3)} c`;
   ui.gamma.textContent = `γ ${frame.gamma.toFixed(3)}`;
   ui.playerSpeedBar.style.width = `${Math.min(frame.playerRatio / 0.985, 1) * 100}%`;
-
-  const target = frame.target;
-  ui.targetPanel.hidden = !target;
-  document.body.classList.toggle('targeting', Boolean(target));
-  if (!target) return;
-
-  ui.targetName.textContent = target.name;
-  ui.targetSpeed.innerHTML = `${target.speed.toFixed(1)} <em>u/s</em>`;
-  const closingRatio = target.closingSpeed / target.maxClosingSpeed;
-  ui.targetArrow.textContent = closingRatio >= 0 ? '↓' : '↑';
-  ui.targetArrow.style.color = closingRatio >= 0 ? '#426651' : '#a86646';
-  ui.closingMeter.style.height = `${Math.max(8, Math.min(100, Math.abs(closingRatio) * 100))}%`;
-  ui.closingMeter.style.background = closingRatio >= 0 ? '#75946a' : '#bd8662';
 }
 
 ui.enterButton.addEventListener('click', setEntered);

@@ -19,6 +19,7 @@ export const PLAYER_HEIGHT = 1.7;
 export const ROOM_HALF_SIZE = 30;
 const GRAVITY = 14;
 const JUMP_SPEED = 6;
+const IDLE_DRAG = 0.45;
 
 export interface MovementInput {
   forward: number;
@@ -193,7 +194,9 @@ export class WorldSimulation {
       const localDelta = scale(wish, acceleration * deltaSeconds);
       this.player.velocity = addRelativisticVelocities(this.player.velocity, localDelta, this.lightSpeed);
     } else {
-      const damping = Math.exp(-3.5 * deltaSeconds);
+      // Let released movement keys produce a gentle coast. Counter-thrust from
+      // the opposite direction remains the quick, deliberate way to stop.
+      const damping = Math.exp(-IDLE_DRAG * deltaSeconds);
       this.player.velocity.x *= damping;
       this.player.velocity.z *= damping;
       if (this.player.flying) this.player.velocity.y *= damping;

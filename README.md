@@ -49,7 +49,7 @@ python -m http.server 8000 --directory dist
 
 The speed-of-light control is at the bottom of the HUD. Double-clicking its slider restores the default `c = 12` demonstration setting.
 
-While flying, `WASD` moves horizontally in the direction you face, regardless of how far up or down you look. Only `Space` and `Shift` control vertical thrust. Release movement keys to slow to a hover. The speed gauge shows your speed, fraction of light speed, and Lorentz factor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
+While flying, `WASD` moves horizontally in the direction you face, regardless of how far up or down you look. Only `Space` and `Shift` control vertical thrust. Releasing movement keys coasts with light drag; press the opposite direction to stop faster. The speed gauge shows your speed, fraction of light speed, and Lorentz factor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
 
 The square and meadow are open to explore. Tracks and planting are passable; the clocktower, cottages, and two trams are solid. The old central platform, perimeter walls, and scattered blocking props have been removed.
 

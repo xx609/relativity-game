@@ -50,15 +50,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .reticle i { position: absolute; background: #f4fdff; box-shadow: 0 0 2px #203840; }
 .reticle i:first-child { left: 3px; right: 3px; top: 8px; height: 1px; }
 .reticle i:last-child { top: 3px; bottom: 3px; left: 8px; width: 1px; }
-body.targeting .reticle { transform: translate(-50%,-50%) rotate(45deg); }
-.target-panel { position: fixed; left: calc(50% + 25px); top: calc(50% + 23px); min-width: 150px; height: 55px; border-radius: 17px; display: grid; grid-template-columns: 29px 1fr 4px; align-items: center; padding: 7px 10px; gap: 9px; }
-.target-panel[hidden] { display: none; }
-.target-icon { width: 27px; height: 27px; border: 1px solid var(--glass-edge); background: rgba(255, 255, 255, .18); box-shadow: inset 0 1px rgba(255, 255, 255, .7); border-radius: 50%; display: grid; place-items: center; color: var(--accent); }
-.target-panel small { display: block; color: var(--muted); font-size: 8px; letter-spacing: .1em; margin-bottom: 3px; }
-.target-panel strong { font: 14px Consolas, monospace; }
-.target-panel em { font-style: normal; color: var(--muted); font-size: 9px; }
-.closing-meter { width: 3px; height: 30px; border-radius: 3px; overflow: hidden; background: rgba(42, 78, 87, .15); display: flex; align-items: flex-end; }
-.closing-meter i { width: 100%; height: 50%; background: var(--accent); }
 .control-dock { position: fixed; left: 50%; bottom: var(--dock-bottom); height: 58px; transform: translateX(-50%); display: flex; align-items: center; border-radius: 24px; padding: 7px; gap: 6px; }
 .icon-button, .compare-button { border: 1px solid transparent; background: transparent; cursor: pointer; transition: background .18s, box-shadow .18s, border-color .18s; }
 .icon-button { width: 40px; height: 40px; color: var(--accent); font-size: 16px; border-radius: 16px; }
@@ -104,7 +95,7 @@ input[type="range"]::-moz-range-thumb { width: 15px; height: 15px; border-radius
 .start-screen button { min-width: 128px; min-height: 44px; flex-shrink: 0; padding: 0 24px; border: 1px solid var(--glass-edge); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color .18s, transform .18s; }
 .start-screen button:hover { background-color: var(--glass-hover); transform: translateY(-1px); }
 .start-screen button:active { transform: translateY(0); }
-body:has(.start-screen:not(.dismissed)) :is(.brand, .speed-gauge, .control-dock, .settings-button, .reticle, .target-panel) { visibility: hidden; }
+body:has(.start-screen:not(.dismissed)) :is(.brand, .speed-gauge, .control-dock, .settings-button, .reticle) { visibility: hidden; }
 .control-hint { position: fixed; display: flex; align-items: center; gap: 9px; color: var(--ink); font-size: 10px; line-height: 14px; pointer-events: none; }
 .control-hint[hidden] { display: none; }
 body:has(.settings-panel:not([hidden])) .move-hint { visibility: hidden; }

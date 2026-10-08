@@ -45,6 +45,24 @@ describe('continuous contact without position correction', () => {
 });
 
 describe('world continuity', () => {
+  it('coasts while idle and brakes faster with opposite-direction input', () => {
+    const coasting = new WorldSimulation();
+    const braking = new WorldSimulation();
+    for (const world of [coasting, braking]) {
+      world.entities = [];
+      world.player.position = vec(0, 20, 16);
+      world.player.velocity = vec(4, 0, 0);
+      world.player.flying = true;
+      world.player.grounded = false;
+    }
+    for (let frame = 0; frame < 30; frame += 1) {
+      coasting.step(1 / 60, idle);
+      braking.step(1 / 60, { ...idle, right: -1 });
+    }
+    expect(coasting.player.velocity.x).toBeGreaterThan(3);
+    expect(Math.abs(braking.player.velocity.x)).toBeLessThan(Math.abs(coasting.player.velocity.x) * 0.5);
+  });
+
   it('keeps player steps bounded while running through the town and meadow', () => {
     const world = new WorldSimulation();
     for (let frame = 0; frame < 1800; frame += 1) {
@@ -118,14 +136,21 @@ describe('jumping and flight', () => {
     expect(world.player.velocity.y).toBeGreaterThan(0);
   });
 
-  it('flies up, settles into a hover, descends, and returns to walking', () => {
+  it('flies up, coasts, counter-thrusts to a stop, and returns to walking', () => {
     const world = new WorldSimulation();
     world.step(1 / 60, { ...idle, toggleFlight: true });
     step(world, 45, { ...idle, vertical: 1 });
     expect(world.player.flying).toBe(true);
     expect(world.player.position.y).toBeGreaterThan(PLAYER_HEIGHT + 1);
     step(world, 240);
-    expect(magnitude(world.player.velocity)).toBeLessThan(0.00001);
+    expect(world.player.velocity.y).toBeGreaterThan(0.5);
+    let counterThrustFrames = 0;
+    while (world.player.velocity.y > 0 && counterThrustFrames < 60) {
+      world.step(1 / 60, { ...idle, vertical: -1 });
+      counterThrustFrames += 1;
+    }
+    expect(counterThrustFrames).toBeLessThan(60);
+    expect(Math.abs(world.player.velocity.y)).toBeLessThan(0.2);
     const hoverHeight = world.player.position.y;
     step(world, 20, { ...idle, vertical: -1 });
     expect(world.player.position.y).toBeLessThan(hoverHeight);

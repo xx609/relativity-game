@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { InputController } from './InputController';
 import {
-  closingSpeed,
   lerp,
   lorentzFactor,
   magnitude,
@@ -30,14 +29,6 @@ export interface EffectSettings {
   lowDistortion: boolean;
 }
 
-export interface TargetInfo {
-  id: string;
-  name: string;
-  speed: number;
-  closingSpeed: number;
-  maxClosingSpeed: number;
-}
-
 export interface FrameInfo {
   playerSpeed: number;
   playerRatio: number;
@@ -45,7 +36,6 @@ export interface FrameInfo {
   flying: boolean;
   grounded: boolean;
   altitude: number;
-  target: TargetInfo | null;
 }
 
 interface EntityVisual {
@@ -92,8 +82,6 @@ export class RelativityGame {
   private relativityAmount = 1;
   private delayAmount = 0;
   private readonly visuals = new Map<string, EntityVisual>();
-  private readonly pickable: THREE.Object3D[] = [];
-  private readonly raycaster = new THREE.Raycaster();
   private readonly clock = new THREE.Clock();
   private animationFrame = 0;
   private accumulator = 0;
@@ -188,7 +176,6 @@ export class RelativityGame {
     this.updateEntities(frameDelta);
     this.scene.updateMatrixWorld(true);
     this.camera.updateMatrixWorld(true);
-    const target = this.pickTarget();
     const speed = magnitude(this.simulation.player.velocity);
     const ratio = speed / this.simulation.lightSpeed;
     this.spacetime?.update(this.effects.reducedMotion ? 0 : this.renderTime, this.effects.reducedMotion ? 0 : ratio);
@@ -199,7 +186,6 @@ export class RelativityGame {
       flying: this.simulation.player.flying,
       grounded: this.simulation.player.grounded,
       altitude: Math.max(0, this.observerPosition.y - PLAYER_HEIGHT),
-      target,
     });
 
     this.renderer.render(this.scene, this.camera);
@@ -276,32 +262,6 @@ export class RelativityGame {
     }
   }
 
-  private pickTarget(): TargetInfo | null {
-    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-    this.raycaster.far = 42;
-    const hit = this.raycaster.intersectObjects(this.pickable, true)[0];
-    const id = hit?.object.userData.entityId as string | undefined;
-    if (!id) {
-      return null;
-    }
-    const entity = this.simulation.entities.find((candidate) => candidate.id === id);
-    if (!entity) return null;
-    const closing = closingSpeed(
-      entity.position,
-      entity.velocity,
-      this.simulation.player.position,
-      this.simulation.player.velocity,
-      this.simulation.lightSpeed,
-    );
-    return {
-      id,
-      name: entity.shortName,
-      speed: magnitude(relativeVelocity(entity.velocity, this.simulation.player.velocity, this.simulation.lightSpeed)),
-      closingSpeed: closing,
-      maxClosingSpeed: this.simulation.lightSpeed,
-    };
-  }
-
   private buildWorld(): void {
     this.world.name = 'observer-relative-world';
     this.world.matrixAutoUpdate = false;
@@ -350,9 +310,6 @@ export class RelativityGame {
     group.matrixAutoUpdate = false;
     group.position.set(entity.position.x, entity.position.y, entity.position.z);
     const tram = buildTram(entity);
-    tram.traverse((child) => {
-      if (child instanceof THREE.Mesh) child.userData.entityId = entity.id;
-    });
     group.add(tram);
 
     const clock = this.createClock(0.28, 0x66583f);
@@ -367,9 +324,6 @@ export class RelativityGame {
     arrow.position.y = 1.5;
     group.add(arrow);
 
-    group.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.userData.entityId) this.pickable.push(child);
-    });
     const emitterBeta = { value: new THREE.Vector3(entity.velocity.x, entity.velocity.y, entity.velocity.z).divideScalar(this.simulation.lightSpeed) };
     this.materialEffects.attach(group, emitterBeta);
     this.visuals.set(entity.id, {
