@@ -122,7 +122,7 @@ export function buildTram(entity: { size: { x: number; y: number; z: number }; b
   const width = entity.size.z;
   box(tram, [length, 1.95, width], [0, 0.02, 0], paint);
   box(tram, [length + 0.18, 0.2, width + 0.16], [0, 1.05, 0], cream);
-  box(tram, [length, 0.09, width + 0.03], [0, -0.17, 0], cream);
+  box(tram, [length + 0.03, 0.09, width + 0.03], [0, -0.17, 0], cream);
   for (const side of [-1, 1]) {
     for (const x of [-1.1, 0, 1.1]) box(tram, [0.85, 0.78, 0.03], [x, 0.48, side * (width / 2 + 0.02)], glass);
     box(tram, [0.04, 0.8, width * 0.72], [side * (length / 2 + 0.02), 0.48, 0], glass);
