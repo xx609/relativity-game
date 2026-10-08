@@ -39,6 +39,21 @@ const ui = {
 let hasEntered = false;
 let wasPointerLocked = false;
 let toastTimer = 0;
+let lightSpeedWheelDelta = 0;
+
+function setLightSpeed(value: number): void {
+  if (!Number.isFinite(value)) return;
+  const minimum = Number(ui.lightSpeed.min);
+  const maximum = Number(ui.lightSpeed.max);
+  const step = Number(ui.lightSpeed.step);
+  const clamped = Math.max(minimum, Math.min(maximum, value));
+  const stepped = minimum + Math.round((clamped - minimum) / step) * step;
+  const next = Number(stepped.toFixed(10));
+
+  ui.lightSpeed.value = String(next);
+  ui.lightSpeedValue.value = next.toFixed(1);
+  game.setLightSpeed(next);
+}
 
 function setEntered(): void {
   if (!hasEntered) {
@@ -69,8 +84,7 @@ function setPaused(paused: boolean): void {
 
 function resetWorld(): void {
   game.reset();
-  ui.lightSpeed.value = String(DEFAULT_LIGHT_SPEED);
-  ui.lightSpeedValue.value = DEFAULT_LIGHT_SPEED.toFixed(1);
+  setLightSpeed(DEFAULT_LIGHT_SPEED);
   ui.pauseButton.setAttribute('aria-pressed', 'false');
   ui.pauseButton.querySelector('span')!.textContent = 'Ⅱ';
   showToast('WORLD RESET');
@@ -112,6 +126,7 @@ canvas.addEventListener('click', () => {
 });
 
 game.onLockChange = (locked) => {
+  lightSpeedWheelDelta = 0;
   // Browsers can consume Escape while releasing pointer lock, so also dismiss
   // the hint on a user unlock. Opening settings or leaving the tab keeps it.
   if (wasPointerLocked && !locked && ui.settingsPanel.hidden && document.hasFocus()) {
@@ -124,14 +139,10 @@ game.onFrame = updateHud;
 ui.pauseButton.addEventListener('click', () => setPaused(!game.simulation.paused));
 ui.resetButton.addEventListener('click', resetWorld);
 ui.lightSpeed.addEventListener('input', () => {
-  const value = Number(ui.lightSpeed.value);
-  game.setLightSpeed(value);
-  ui.lightSpeedValue.value = value.toFixed(1);
+  setLightSpeed(Number(ui.lightSpeed.value));
 });
 ui.lightSpeed.addEventListener('dblclick', () => {
-  ui.lightSpeed.value = String(DEFAULT_LIGHT_SPEED);
-  ui.lightSpeedValue.value = DEFAULT_LIGHT_SPEED.toFixed(1);
-  game.setLightSpeed(DEFAULT_LIGHT_SPEED);
+  setLightSpeed(DEFAULT_LIGHT_SPEED);
   showToast('c RESTORED');
 });
 ui.compareButton.addEventListener('click', () => {
@@ -175,6 +186,27 @@ ui.sensitivity.addEventListener('input', () => {
   game.input.sensitivity = value;
   ui.sensitivityOutput.value = `${value.toFixed(1)}×`;
 });
+
+window.addEventListener('wheel', (event) => {
+  const target = event.target;
+  const overLightControl = target instanceof Element && Boolean(target.closest('.light-control'));
+  if (!overLightControl && (!game.input.isLocked || !ui.settingsPanel.hidden)) return;
+
+  event.preventDefault();
+  const delta = event.deltaY * (event.deltaMode === WheelEvent.DOM_DELTA_LINE
+    ? 1 / 3
+    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? 1 : 1 / 100);
+  if (lightSpeedWheelDelta !== 0 && Math.sign(delta) !== Math.sign(lightSpeedWheelDelta)) {
+    lightSpeedWheelDelta = 0;
+  }
+  lightSpeedWheelDelta += delta;
+
+  const steps = Math.trunc(Math.abs(lightSpeedWheelDelta));
+  if (steps === 0) return;
+  const direction = -Math.sign(lightSpeedWheelDelta);
+  lightSpeedWheelDelta -= Math.sign(lightSpeedWheelDelta) * steps;
+  setLightSpeed(Number(ui.lightSpeed.value) + direction * steps * Number(ui.lightSpeed.step));
+}, { passive: false });
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Escape') {

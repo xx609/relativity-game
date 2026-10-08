@@ -39,6 +39,7 @@ python -m http.server 8000 --directory dist
 
 - `WASD` or arrow keys — move
 - Mouse — look
+- Scroll wheel — adjust the simulated speed of light (`c`)
 - `Shift` — accelerate faster while walking; hold to descend while flying
 - `Space` — jump; hold to rise while flying
 - Double-tap `Space` — toggle flight (turn off to fall and land); `F` also works
@@ -47,7 +48,7 @@ python -m http.server 8000 --directory dist
 - `C` — classical/relativistic visual comparison
 - `Esc` — release pointer or close settings
 
-The speed-of-light control is at the bottom of the HUD. Double-clicking its slider restores the default `c = 12` demonstration setting.
+The speed-of-light control is at the bottom of the HUD. Scroll up to raise `c` and down to lower it while exploring or hovering the control. Double-clicking its slider restores the default `c = 12` demonstration setting.
 
 While flying, `WASD` moves horizontally in the direction you face, regardless of how far up or down you look. Only `Space` and `Shift` control vertical thrust. Releasing movement keys coasts with light drag; press the opposite direction to stop faster. The speed gauge shows your speed, fraction of light speed, and Lorentz factor; jumping and flying share the same light-speed limit and solid-object collisions as walking.
 
