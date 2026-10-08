@@ -1,5 +1,6 @@
 import './styles.css';
 import { RelativityGame, type FrameInfo } from './game/RelativityGame';
+import { TouchControls } from './game/TouchControls';
 import { DEFAULT_LIGHT_SPEED } from './simulation/world';
 
 function element<T extends HTMLElement>(selector: string): T {
@@ -11,6 +12,9 @@ function element<T extends HTMLElement>(selector: string): T {
 const canvas = element<HTMLCanvasElement>('#world');
 const game = new RelativityGame(canvas);
 game.input.setActive(false);
+const mobilePointer = window.matchMedia('(hover: none) and (pointer: coarse)');
+const usesTouchControls = mobilePointer.matches || navigator.maxTouchPoints > 0;
+document.body.classList.toggle('touch-input', usesTouchControls);
 
 const ui = {
   startScreen: element<HTMLDivElement>('#start-screen'),
@@ -36,6 +40,12 @@ const ui = {
   toast: element<HTMLDivElement>('#toast'),
 };
 
+new TouchControls(
+  element<HTMLElement>('#move-joystick'),
+  element<HTMLButtonElement>('#jump-button'),
+  game.input,
+);
+
 let hasEntered = false;
 let wasPointerLocked = false;
 let toastTimer = 0;
@@ -58,14 +68,14 @@ function setLightSpeed(value: number): void {
 function setEntered(): void {
   if (!hasEntered) {
     hasEntered = true;
-    ui.moveHint.hidden = false;
-    ui.cursorHint.hidden = false;
+    ui.moveHint.hidden = usesTouchControls;
+    ui.cursorHint.hidden = usesTouchControls;
     ui.startScreen.classList.add('dismissed');
     window.setTimeout(() => { ui.startScreen.hidden = true; }, 650);
   }
   closeSettings();
   canvas.focus();
-  game.requestPointerLock();
+  if (!usesTouchControls) game.requestPointerLock();
 }
 
 function showToast(message: string): void {
@@ -122,7 +132,7 @@ function updateHud(frame: FrameInfo): void {
 
 ui.enterButton.addEventListener('click', setEntered);
 canvas.addEventListener('click', () => {
-  if (hasEntered && ui.settingsPanel.hidden) game.requestPointerLock();
+  if (hasEntered && ui.settingsPanel.hidden && !usesTouchControls) game.requestPointerLock();
 });
 
 game.onLockChange = (locked) => {

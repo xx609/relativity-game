@@ -90,6 +90,17 @@
         <span aria-hidden="true">to move</span>
       </div>
       <div id="cursor-hint" class="control-hint cursor-hint glass" hidden><kbd>Esc</kbd><span>to show cursor</span></div>
+
+      <div class="touch-controls" aria-label="Touch controls">
+        <div id="move-joystick" class="move-joystick" role="group" aria-label="Movement joystick">
+          <div class="joystick-ring" aria-hidden="true">
+            <i class="joystick-knob"></i>
+          </div>
+        </div>
+        <button id="jump-button" class="jump-button glass" type="button" aria-label="Jump. Double tap to toggle flight." aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg>
+        </button>
+      </div>
       <div id="toast" class="toast glass" role="status" aria-live="polite"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>

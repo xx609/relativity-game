@@ -124,4 +124,23 @@ describe('Space flight gesture', () => {
     key('keydown', 20);
     expect(input.movement().vertical).toBe(1);
   });
+
+  it('combines analog joystick movement with keyboard input and clamps it', () => {
+    input.setVirtualMovement(0.45, -0.35);
+    expect(input.movement()).toMatchObject({ forward: 0.45, right: -0.35 });
+    key('keydown', 0, 'KeyW');
+    key('keydown', 0, 'KeyD');
+    expect(input.movement()).toMatchObject({ forward: 1, right: 0.65 });
+  });
+
+  it('supports touch jump, hold-to-rise, and double-tap flight', () => {
+    input.pressVirtualJump(0);
+    expect(input.movement()).toMatchObject({ jump: true, vertical: 1, toggleFlight: false });
+    expect(input.movement()).toMatchObject({ jump: false, vertical: 1, toggleFlight: false });
+    input.releaseVirtualJump();
+    expect(input.movement().vertical).toBe(0);
+    input.pressVirtualJump(200);
+    expect(input.movement()).toMatchObject({ jump: false, vertical: 1, toggleFlight: true });
+    input.releaseVirtualJump();
+  });
 });

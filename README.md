@@ -47,6 +47,7 @@ python -m http.server 8000 --directory dist
 - `R` — reset
 - `C` — classical/relativistic visual comparison
 - `Esc` — release pointer or close settings
+- Touch — use the left joystick to move, drag the scene to look, and tap the right jump button (hold to rise while flying)
 
 The speed-of-light control is at the bottom of the HUD. Scroll up to raise `c` and down to lower it while exploring or hovering the control. Double-clicking its slider restores the default `c = 12` demonstration setting.
 

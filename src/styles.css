@@ -21,7 +21,7 @@ body { background: #c8e1df; color: var(--ink); user-select: none; }
 button, input { font: inherit; }
 button { color: inherit; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-#world { position: fixed; inset: 0; width: 100%; height: 100%; outline: 0; }
+#world { position: fixed; inset: 0; width: 100%; height: 100%; outline: 0; touch-action: none; }
 .glass {
   background:
     radial-gradient(ellipse at 0% 0%, var(--glass-reflection), transparent 58%),
@@ -111,6 +111,74 @@ body:has(.settings-panel:not([hidden])) .move-hint { visibility: hidden; }
 .cursor-hint { top: 85px; left: 28px; padding: 6px 11px 6px 6px; border-radius: 15px; }
 .toast { position: fixed; top: 91px; left: 50%; transform: translateX(-50%) translateY(-8px); opacity: 0; color: var(--accent); font-size: 10px; letter-spacing: .1em; padding: 9px 15px; border-radius: 20px; transition: opacity .2s, transform .2s; pointer-events: none; }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.touch-controls { display: none; position: fixed; inset: 0; pointer-events: none; }
+.touch-input .touch-controls { display: block; }
+.move-joystick {
+  --stick-x: 0px;
+  --stick-y: 0px;
+  position: absolute;
+  left: max(20px, env(safe-area-inset-left));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  touch-action: none;
+  pointer-events: auto;
+}
+.joystick-ring {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  border: 1px solid rgba(255, 255, 255, .38);
+  border-radius: 50%;
+  background: rgba(128, 135, 136, .3);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .32), 0 5px 18px rgba(24, 31, 32, .12);
+  -webkit-backdrop-filter: blur(4px) saturate(120%);
+  backdrop-filter: blur(4px) saturate(120%);
+}
+.joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(91, 96, 97, .92), rgba(59, 64, 65, .88));
+  box-shadow: 0 2px 6px rgba(24, 31, 32, .22), inset 0 1px rgba(255, 255, 255, .16);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  transform: translate(calc(-50% + var(--stick-x)), calc(-50% + var(--stick-y)));
+  transition: transform .08s ease-out;
+}
+.move-joystick.active .joystick-knob { transition: none; }
+.jump-button {
+  position: absolute;
+  right: max(25px, env(safe-area-inset-right));
+  bottom: max(34px, env(safe-area-inset-bottom));
+  width: 78px;
+  height: 78px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .38);
+  border-radius: 50%;
+  color: rgba(67, 72, 73, .88);
+  background: rgba(112, 119, 120, .34);
+  box-shadow: 0 5px 18px rgba(24, 31, 32, .14), inset 0 1px rgba(255, 255, 255, .34);
+  touch-action: none;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.jump-button svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.jump-button.active { color: rgba(45, 49, 50, .94); background-color: rgba(139, 145, 146, .46); transform: scale(.94); }
+.touch-input .settings-button { top: 96px; bottom: auto; }
+.touch-input .settings-panel { top: 146px; bottom: auto; max-height: calc(100vh - 166px); }
+.touch-input:has(.settings-panel:not([hidden])) .touch-controls { opacity: .22; pointer-events: none; }
+.touch-input:has(.settings-panel:not([hidden])) :is(.move-joystick, .jump-button) { pointer-events: none; }
+body:has(.start-screen:not(.dismissed)) .touch-controls { visibility: hidden; pointer-events: none; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass { background: rgba(238, 247, 241, .92); }
 }
@@ -128,6 +196,7 @@ body:has(.settings-panel:not([hidden])) .move-hint { visibility: hidden; }
   .settings-button { right: 18px; bottom: 96px; }
   .settings-panel { right: 18px; bottom: 145px; max-height: calc(100vh - 169px); }
   .start-screen { padding: 24px 6vw; }
+  .touch-input .control-dock { bottom: calc(156px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -135,4 +204,9 @@ body:has(.settings-panel:not([hidden])) .move-hint { visibility: hidden; }
 @media (max-width: 400px) {
   .brand span { display: none; }
   .move-hint { bottom: 152px; }
+}
+@media (max-height: 520px) and (pointer: coarse) {
+  .move-joystick { width: 104px; height: 104px; }
+  .joystick-ring { width: 94px; height: 94px; }
+  .jump-button { width: 68px; height: 68px; bottom: max(29px, env(safe-area-inset-bottom)); }
 }
