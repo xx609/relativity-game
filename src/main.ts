@@ -21,8 +21,6 @@ const ui = {
   playerSpeedBar: element<HTMLElement>('#player-speed-bar'),
   playerRatio: element<HTMLElement>('#player-ratio'),
   gamma: element<HTMLElement>('#gamma-readout'),
-  movementMode: element<HTMLElement>('#movement-mode'),
-  altitude: element<HTMLElement>('#altitude-readout'),
   targetPanel: element<HTMLElement>('#target-panel'),
   targetName: element<HTMLElement>('#target-name'),
   targetSpeed: element<HTMLElement>('#target-speed'),
@@ -111,8 +109,6 @@ function updateHud(frame: FrameInfo): void {
   ui.playerRatio.textContent = `${frame.playerRatio.toFixed(3)} c`;
   ui.gamma.textContent = `γ ${frame.gamma.toFixed(3)}`;
   ui.playerSpeedBar.style.width = `${Math.min(frame.playerRatio / 0.985, 1) * 100}%`;
-  ui.movementMode.textContent = frame.flying ? 'FLYING' : frame.grounded ? 'WALKING' : 'AIRBORNE';
-  ui.altitude.textContent = `${frame.altitude.toFixed(1)} u ↑`;
 
   const target = frame.target;
   ui.targetPanel.hidden = !target;
