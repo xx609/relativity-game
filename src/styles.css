@@ -157,7 +157,7 @@ body:has(.settings-panel:not([hidden])) .move-hint { visibility: hidden; }
 .jump-button {
   position: absolute;
   right: max(25px, env(safe-area-inset-right));
-  bottom: max(34px, env(safe-area-inset-bottom));
+  bottom: calc(max(22px, env(safe-area-inset-bottom)) + 18px);
   width: 78px;
   height: 78px;
   padding: 0;
@@ -212,7 +212,7 @@ body:has(.start-screen:not(.dismissed)) .touch-controls { visibility: hidden; po
 @media (max-height: 520px) {
   .touch-input .move-joystick { width: 104px; height: 104px; }
   .touch-input .joystick-ring { width: 94px; height: 94px; }
-  .touch-input .jump-button { width: 68px; height: 68px; bottom: max(29px, env(safe-area-inset-bottom)); }
+  .touch-input .jump-button { width: 68px; height: 68px; bottom: calc(max(22px, env(safe-area-inset-bottom)) + 18px); }
 }
 @media (orientation: landscape) {
   .touch-input .brand { top: 14px; left: max(14px, env(safe-area-inset-left)); }
